@@ -1,0 +1,14 @@
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.pdf
+
+# Editor backup files
+*~
+*.bak
+*.swp
