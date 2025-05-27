@@ -12,3 +12,7 @@
 *~
 *.bak
 *.swp
+
+# Allow specific PDF files (logos)
+!uzl-thesis-logo-slogan.pdf
+!uzl-thesis-logo-uzl.pdf
