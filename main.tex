@@ -26,6 +26,7 @@ Collectively, these architectural features establish a robust foundation for imp
 The objective of the performance study was to quantify the overhead introduced by Keystone's enclave isolation mechanisms on RISC-V architectures. Experiments were executed within a QEMU-based virtual environment configured for the RV64 architecture, providing consistency and hardware independence.
 
 To run benchmarks, a separate enclave application (eapp) and corresponding host application were developed for each benchmark. The host application initialized and managed the enclave using the Keystone C++ API, while the enclave application contained the benchmark logic and communicated with the host through edge calls. This modular structure allowed each benchmark to be executed both natively (outside the enclave) and securely (within the enclave), enabling accurate measurement of the enclave-related overhead.
+
 To achieve a comparative analysis, two execution modes were considered:
 \begin{enumerate}
 \item \textit{Native Execution}: Benchmark execution without enclave isolation.
@@ -44,8 +45,8 @@ The evaluation focused on determining the relative performance degradation attri
 \chapter{System Configuration Recommendations}
 \input{chapters/recommendations.tex}
 
-\chapter{Conclusion and Future Work}
-\input{chapters/conclusion.tex}
+\chapter{Conclusion}
+%\input{chapters/conclusion.tex}
 
 \begin{bibtex-entries}
 @TechReport{Kernighan1974,
@@ -54,5 +55,16 @@ title = {Programming in C – A Tutorial},
 institution = {Bell Laboratories},
 year = {1974}
 }
+
+@article{suzaki2021ts,
+  title={Ts-perf: General performance measurement of trusted execution environment and rich execution environment on intel sgx, arm trustzone, and risc-v keystone},
+  author={Suzaki, Kuniyasu and Nakajima, Kenta and Oi, Tsukasa and Tsukamoto, Akira},
+  journal={IEEE Access},
+  volume={9},
+  pages={133520--133530},
+  year={2021},
+  publisher={IEEE}
+}
+
 \end{bibtex-entries}
 \end{document}

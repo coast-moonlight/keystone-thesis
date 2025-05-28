@@ -25,21 +25,37 @@ make debug-connect
 Additional details on the build process, dependencies, and configuration options are available in the \textbf{Appendix}.
 
 \section{Benchmarking tools and metrics}
-%\section{Performance metrics}
-The performance characterization of Keystone utilized two established synthetic benchmarks tailored for embedded system evaluation: \textit{Dhrystone} and \textit{CoreMark}. Both were selected for their cross-platform compatibility and established use in RISC-V environments.
 
-\textbf{Dhrystone} evaluates integer arithmetic and control flow performance, making it effective for assessing core CPU throughput in environments where floating-point operations are secondary. The RISC-V version, sourced from the \texttt{riscv-tests} repository, was employed to calculate \textit{Dhrystones per second (DMIPS)}. To isolate Keystone’s overhead, measurements were conducted in both native and enclave contexts.
+The performance characterization of Keystone utilized two widely adopted synthetic benchmarks: \textit{Dhrystone} and \textit{CoreMark}. Both benchmarks are designed for embedded system evaluation and are well-supported in RISC-V environments. They were chosen to capture the computational characteristics most relevant to TEE deployment, including processor throughput, control flow, and moderate memory usage.
 
-\textbf{CoreMark}, developed by EEMBC, provides a broader performance assessment through representative workloads, including matrix operations, list processing, and state machine evaluations. The RISC-V implementation from the SiFive repository was used to determine \textit{iterations per second (IPS)}. This benchmark offers a deeper view into system performance under more diverse computational tasks than Dhrystone.
+\textit{Dhrystone} primarily evaluates integer arithmetic and control flow performance, making it suitable for measuring core CPU throughput in environments where floating-point operations and I/O are secondary. The RISC-V implementation, sourced from the \texttt{riscv-tests} repository, was used to compute \textit{Dhrystones per second (DMIPS)}. Measurements were taken both in native execution and within a Keystone enclave to quantify the performance overhead introduced by enclave isolation.
 
-Performance variability was assessed by calculating the standard deviation across repeated runs. Metrics collected included:
+\textit{CoreMark}, developed by EEMBC, offers a broader performance profile by incorporating common algorithmic workloads such as list processing, matrix manipulation, and finite-state machine evaluation. While still CPU-bound, CoreMark introduces moderate memory access patterns through its internal data structures. The benchmark was obtained from the SiFive repository and used to calculate \textit{iterations per second (IPS)}.
+
+Performance metrics collected for both benchmarks included:
 \begin{itemize}
-\item Execution Time
-\item DMIPS (Dhrystone) and IPS (CoreMark)
-\item Standard Deviation across trials
+    \item \textbf{Execution Time:} This is the total elapsed wall-clock time taken for a benchmark to complete execution. It serves as the most direct measure of performance, indicating how long the CPU and memory resources are engaged. Comparing execution times between native and enclave runs highlights the overhead introduced by enclave isolation and security mechanisms.
+
+    \item \textbf{Dhrystones per Second (DMIPS):} Derived from the Dhrystone benchmark, DMIPS represents a normalized measure of integer computing throughput. It quantifies how many Dhrystone operations the CPU can perform per second, serving as a standardized metric for CPU integer performance. A reduction in DMIPS inside the enclave context signals the performance cost of enclave execution.
+
+    \item \textbf{Iterations per Second (IPS):} Obtained from the CoreMark benchmark, IPS measures the number of complete benchmark iterations executed per second. Since CoreMark involves a mixture of algorithmic workloads and memory operations, IPS reflects a broader system performance indicator, capturing both CPU and memory subsystem efficiency under enclave constraints.
+
+    \item \textbf{Standard Deviation:} Calculated across multiple repeated runs of each benchmark, the standard deviation quantifies the variability or consistency of the measured execution times and throughput values. Low standard deviation indicates stable and repeatable performance, while higher values may reveal sensitivity to transient system conditions or measurement noise.
+
 \end{itemize}
 
-This dual-benchmark approach ensured a comprehensive evaluation of both low-level CPU operations and higher-level application performance within the enclave context.
+\noindent\textbf{Benchmark Characteristics:}
+\begin{itemize}
+    \item \textit{CPU Intensive:} Both Dhrystone and CoreMark are designed to stress processor logic and control flow. Dhrystone focuses exclusively on integer arithmetic, while CoreMark includes a mix of computational tasks without relying on floating-point operations. These properties make them ideal for evaluating CPU performance in TEE contexts.
+    
+    \item \textit{Memory Interaction:} Although not memory-intensive by design, CoreMark exercises moderate memory usage through data structure manipulation, which may expose latency differences due to enclave-related memory isolation. Dhrystone has minimal memory interaction and serves as a purer test of CPU throughput.
+
+    \item \textit{I/O and Storage:} Neither benchmark performs file or persistent storage operations. As such, storage-related TEE APIs (e.g., secure storage or object I/O) are not exercised and are outside the scope of this performance evaluation.
+\end{itemize}
+
+This dual-benchmark approach ensures a balanced evaluation of Keystone’s impact on both low-level computational performance and higher-level program behavior in a secure enclave environment.
+
 \section{Parameter Variation Strategy}
+
 
 \section{Data Collection and Analysis Procedures}
