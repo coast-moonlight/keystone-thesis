@@ -1,5 +1,7 @@
 \documentclass[english, version-2020-11]{uzl-thesis}
 \UzLStyle{computer modern oldschool design}
+\usepackage{float}
+
 \input{preamble.tex} % Put your \UzLStyle and \UzLThesisSetup here
 
 \begin{document}
@@ -8,9 +10,32 @@
 \input{chapters/introduction.tex}
 
 \chapter{Background and System Architecture}
+The RISC-V instruction set architecture (ISA) serves as a promising foundation for TEE implementation due to its open and extensible nature. RISC-V offers unique benefits beyond its open-source status: it incorporates security-oriented primitives such as Physical Memory Protection (PMP) which facilitates efficient and fine-grained memory isolation. Moreover, its community-driven evolution fosters innovation in security features, enabling frameworks like Keystone to experiment with, and contribute to, ISA enhancements.
+
+RISC-V defines three primary privilege modes: user (U-mode), supervisor (S-mode), and machine (M-mode). These modes govern the execution privileges and resource accessibility of software components. M-mode, the highest privilege level, has exclusive control over hardware resources and interrupt management, rendering it an ideal candidate for hosting the TCB, such as the Security Monitor (SM) in Keystone. Unlike hardware microcode, M-mode software can be developed and patched flexibly using standard programming languages and toolchains, improving maintainability and formal verification potential.
+
+A key hardware feature leveraged by Keystone is the PMP, introduced in the RISC-V Privilege Specification version 1.10. PMP enables M-mode to enforce physical memory access restrictions on lower privilege levels, thus underpinning enclave memory isolation. Despite variations in PMP implementations across platforms, its guarantees are standardized, facilitating portable and secure enclave deployment.
+
+Interrupt and exception handling in RISC-V is primarily managed at the M-mode level, which may delegate common traps, such as page faults and system calls, to S-mode to optimize performance. Virtual memory support is provided by a memory management unit (MMU) that translates virtual addresses to physical addresses using multi-level page tables. While the operating system controls virtual memory via the \texttt{satp} register, Keystone enclaves maintain protected page tables and are secured against OS-based attacks through PMP-enforced physical memory restrictions.
+
+Collectively, these architectural features establish a robust foundation for implementing secure and efficient TEEs on RISC-V platforms, as exemplified by Keystone.
+
 \input{chapters/background.tex}
 
 \chapter{Methodology}
+The objective of the performance study was to quantify the overhead introduced by Keystone's enclave isolation mechanisms on RISC-V architectures. Experiments were executed within a QEMU-based virtual environment configured for the RV64 architecture, providing consistency and hardware independence.
+
+To run benchmarks, a separate enclave application (eapp) and corresponding host application were developed for each benchmark. The host application initialized and managed the enclave using the Keystone C++ API, while the enclave application contained the benchmark logic and communicated with the host through edge calls. This modular structure allowed each benchmark to be executed both natively (outside the enclave) and securely (within the enclave), enabling accurate measurement of the enclave-related overhead.
+To achieve a comparative analysis, two execution modes were considered:
+\begin{enumerate}
+\item \textit{Native Execution}: Benchmark execution without enclave isolation.
+\item \textit{Enclave Execution}: Benchmark execution within the Keystone TEE.
+\end{enumerate}
+
+Each benchmark—Dhrystone and CoreMark—was run multiple times under both conditions. Performance metrics, including total execution time, throughput (DMIPS or IPS), and result variability (standard deviation), were recorded and analyzed.
+
+The evaluation focused on determining the relative performance degradation attributable to enclave isolation by comparing results across the two execution modes.
+
 \input{chapters/methodology.tex}
 
 \chapter{Results and discussion}

@@ -1,8 +1,45 @@
 \section{Experimental setup}
+%The experimental setup utilizes the Keystone-enhanced QEMU emulator running on an Ubuntu host operating system. This configuration allows for flexible development and testing of Keystone enclaves in a controlled environment without requiring physical RISC-V hardware. The Ubuntu host provides a stable platform for building and deploying enclave binaries, and it facilitates the integration of the Keystone kernel driver and SDK.
+
+The Keystone framework was evaluated using a RISC-V specific fork of the QEMU emulator on an Ubuntu 22.04 host system. This configuration allowed testing of Keystone enclaves in a controlled virtualized environment, avoiding the need for physical RISC-V hardware. The system was configured to emulate the RV64 architecture for evaluating Keystone’s performance.
+
+The build process for Keystone utilized the Make and Buildroot tools. Key configuration options included the selection of the QEMU virtual platform, the RV64 architecture, and the corresponding Buildroot configuration. Keystone was initiated in the QEMU environment with the following command:
+
+\begin{verbatim}
+make run
+\end{verbatim}
+
+This command launched the Security Monitor and the Linux OS. Within the QEMU guest, the Keystone kernel driver was manually loaded using:
+
+\begin{verbatim}
+modprobe keystone-driver
+\end{verbatim}
+
+For debugging, Keystone was run in debug mode with the QEMU GDB server connected to inspect memory protection and control registers:
+
+\begin{verbatim}
+KEYSTONE_DEBUG=y make run
+make debug-connect
+\end{verbatim}
+
+Additional details on the build process, dependencies, and configuration options are available in the \textbf{Appendix}.
 
 \section{Benchmarking tools and metrics}
 %\section{Performance metrics}
+The performance characterization of Keystone utilized two established synthetic benchmarks tailored for embedded system evaluation: \textit{Dhrystone} and \textit{CoreMark}. Both were selected for their cross-platform compatibility and established use in RISC-V environments.
 
+\textbf{Dhrystone} evaluates integer arithmetic and control flow performance, making it effective for assessing core CPU throughput in environments where floating-point operations are secondary. The RISC-V version, sourced from the \texttt{riscv-tests} repository, was employed to calculate \textit{Dhrystones per second (DMIPS)}. To isolate Keystone’s overhead, measurements were conducted in both native and enclave contexts.
+
+\textbf{CoreMark}, developed by EEMBC, provides a broader performance assessment through representative workloads, including matrix operations, list processing, and state machine evaluations. The RISC-V implementation from the SiFive repository was used to determine \textit{iterations per second (IPS)}. This benchmark offers a deeper view into system performance under more diverse computational tasks than Dhrystone.
+
+Performance variability was assessed by calculating the standard deviation across repeated runs. Metrics collected included:
+\begin{itemize}
+\item Execution Time
+\item DMIPS (Dhrystone) and IPS (CoreMark)
+\item Standard Deviation across trials
+\end{itemize}
+
+This dual-benchmark approach ensured a comprehensive evaluation of both low-level CPU operations and higher-level application performance within the enclave context.
 \section{Parameter Variation Strategy}
 
 \section{Data Collection and Analysis Procedures}
