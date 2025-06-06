@@ -1,4 +1,5 @@
 \chapter{Introduction}
+\label{chap:intro}
 Modern computing increasingly relies on platforms that operate in potentially untrusted environments. These include public cloud infrastructures, multi-tenant servers, and distributed edge devices, where sensitive data and critical computations may be exposed to compromised software stacks or malicious actors. In such contexts, ensuring the confidentiality and integrity of both data and execution is a fundamental requirement. Conventional security mechanisms, such as access control and encryption, are often insufficient in scenarios where the underlying operating system, hypervisor, or even firmware may be compromised.
 
 To address these challenges, Trusted Execution Environments (TEEs) have emerged as a compelling solution. TEEs provide hardware-assisted isolation mechanisms that enable the execution of code in a protected context, referred to as an enclave. This enclave is designed to be resilient to attacks originating from untrusted system components, including the operating system and other user-space applications. By establishing a secure boundary around sensitive code and data, TEEs allow developers to implement trustworthy services even on compromised hosts.
@@ -11,23 +12,18 @@ This thesis presents a detailed investigation into the Keystone TEE framework. I
 
 
 \section{Contributions of this Thesis}
-This thesis makes several substantive contributions to the study and evaluation of Trusted Execution Environments (TEEs), with a particular emphasis on the Keystone framework. The research spans architectural analysis, emulation-based deployment, and empirical performance evaluation. The primary contributions are enumerated below:
 
-\begin{itemize}
-\item \textbf{Comprehensive Architectural Analysis of Keystone:}
-The thesis presents a detailed and systematic examination of the Keystone TEE framework. This includes an in-depth discussion of its core architectural elements, such as the Security Monitor (SM), enclave runtime environment, and user-level application design. The role of RISC-V’s privilege hierarchy and Physical Memory Protection (PMP) in enforcing strict isolation guarantees is elaborated, thereby providing a holistic view of Keystone’s security architecture.
-\item \textbf{Comparative Evaluation with Established TEEs:}  
-A comparative study is conducted to evaluate Keystone alongside widely deployed commercial TEEs, namely Intel Software Guard Extensions (SGX) and ARM TrustZone. This analysis investigates fundamental architectural distinctions, including enclave creation models, privilege separation strategies, scalability, TCB size, and extensibility. The comparison helps contextualize Keystone’s design philosophy and clarifies its advantages in terms of openness and modularity.
+This thesis makes significant contributions to the study and evaluation of Trusted Execution Environments (TEEs), with a particular focus on the Keystone framework. The research encompasses architectural analysis, emulation-based deployment, and rigorous empirical performance evaluation.
 
-\item \textbf{Virtualized Deployment and Toolchain Integration:}  
-The thesis demonstrates the practical deployment of Keystone in a fully virtualized environment using a RISC-V-specific fork of the QEMU emulator. This setup facilitates development and testing without the need for physical RISC-V hardware. It also documents the toolchain configuration, build process, and debugging workflow, thereby offering a reproducible methodology for future research and evaluation.
+Firstly, a comprehensive architectural analysis of the Keystone TEE framework is presented. This includes an in-depth discussion of its core components, such as the Security Monitor (SM), enclave runtime environment, and user-level application design. The role of RISC-V’s privilege hierarchy and Physical Memory Protection (PMP) in enforcing strict isolation guarantees is thoroughly elaborated, providing a holistic understanding of Keystone’s security architecture.
 
-\item \textbf{Performance Evaluation Using Synthetic Benchmarking:}  
-To assess the runtime impact of enclave-based execution, Keystone enclaves are benchmarked using two widely accepted synthetic workloads: Dhrystone and CoreMark. The thesis measures key performance indicators—including execution time, Dhrystones per second (DMIPS), iterations per second (IPS), and standard deviation across runs—to quantify the overhead introduced by enclave isolation and security enforcement.
+Secondly, the thesis conducts a rigorous comparative evaluation of Keystone alongside widely deployed commercial TEEs, specifically Intel Software Guard Extensions (SGX) and ARM TrustZone. This analysis highlights fundamental architectural distinctions, including enclave creation models, privilege separation strategies, scalability, Trusted Computing Base (TCB) size, and extensibility. Such comparison contextualizes Keystone’s design philosophy and underscores its advantages in openness and modularity.
 
-\item \textbf{Workload Characterization Under Enclave Constraints:}  
-The computational behavior of the benchmark applications is analyzed in the context of enclave execution. The findings provide empirical insight into how TEE-induced isolation affects instruction throughput and memory interaction patterns, thus illustrating the performance-security trade-offs inherent to enclave-based models.
-\end{itemize}
+Furthermore, the practical deployment of Keystone within a fully virtualized environment is demonstrated using a RISC-V-specific fork of the QEMU emulator. This approach facilitates development and testing independent of physical RISC-V hardware. The thesis also documents the toolchain configuration, build process, and debugging workflow, establishing a reproducible methodology for future research.
+
+To quantify the runtime overhead associated with enclave-based execution, Keystone enclaves are evaluated using two established synthetic benchmarks: Dhrystone and CoreMark. Key performance metrics—including execution time, Dhrystones per second (DMIPS), iterations per second (IPS), and variability across multiple runs—are measured to assess the cost of enclave isolation and security enforcement.
+
+Finally, the computational behavior of benchmark applications within the enclave context is analyzed to provide empirical insights into how TEE-induced isolation affects instruction throughput and memory access patterns. These findings illuminate the inherent trade-offs between performance and security in enclave-based execution models.
 
 \section{Related Work}
 
@@ -45,16 +41,4 @@ Keystone addresses the limitations of both commercial and academic TEEs by adopt
 
 This thesis is structured to progressively build an understanding of Trusted Execution Environments (TEEs) with a focus on the Keystone framework, moving from conceptual foundations to empirical evaluation and practical system design insights.
 
-\begin{itemize}
-    \item \textbf{Chapter 1: Introduction} introduces the motivation for secure computation in untrusted environments, outlines the core contributions of this thesis, and reviews relevant related work in the domain of TEEs.
-    
-    \item \textbf{Chapter 2: Background and System Architecture} provides technical foundations for understanding TEEs, focusing on the design of the Keystone framework. It also presents a comparative analysis with Intel SGX and ARM TrustZone, highlighting design trade-offs and performance considerations.
-    
-    \item \textbf{Chapter 3: Methodology} outlines the experimental strategy used to evaluate Keystone. It describes the virtualized testbed, benchmark selection, parameter tuning, and data collection procedures used to ensure fair and reproducible performance measurements.
-    
-    \item \textbf{Chapter 4: Results and Discussion} presents empirical findings and analyzes the impact of system parameters such as CPU core count, memory allocation, and cache size on enclave performance. It also discusses performance overheads and key insights derived from the results.
-    
-    \item \textbf{Chapter 5: System Configuration Recommendations} synthesizes the experimental results into actionable guidelines for deploying Keystone TEEs in different workload scenarios. It identifies architectural bottlenecks and suggests improvements for future system designs.
-    
-    \item \textbf{Chapter 6: Conclusion} summarizes the contributions and outcomes of the thesis, reflecting on their implications for secure system design. It also outlines directions for future research, including hardware extensions and formal verification of trusted components.
-\end{itemize}
+This thesis is organized as follows: Chapter~\ref{chap:intro} introduces the motivation for secure computation in untrusted environments, outlines the core contributions of this work, and surveys relevant literature in the domain of Trusted Execution Environments (TEEs). Chapter~\ref{chap:background} presents the technical foundations and system architecture of the Keystone framework, including a comparative analysis with Intel SGX and ARM TrustZone that highlights key design trade-offs and performance considerations. Chapter~\ref{chap:methodology} describes the experimental setup, detailing the virtualized testbed, benchmark selection, parameter tuning, and data collection methods employed to ensure rigorous and reproducible evaluation. Chapter~\ref{chap:results} reports empirical findings and analyzes the impact of system parameters such as CPU core count, memory allocation, and cache size on enclave performance, along with associated overheads and insights. Chapter~\ref{chap:recommendations} synthesizes these results into practical configuration guidelines for deploying Keystone TEEs across diverse workload scenarios and identifies architectural bottlenecks for future improvements. Finally, Chapter~\ref{chap:conclusion} summarizes the main contributions and discusses their implications for secure system design, outlining promising directions for further research including hardware extensions and formal verification.
