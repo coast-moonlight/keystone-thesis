@@ -1,3 +1,22 @@
+\chapter{Methodology}
+\label{chap:methodology}
+The primary objective of this thesis is to assess the performance impact of Keystone’s enclave isolation mechanisms on typical embedded and systems-level workloads. Specifically, the study seeks to quantify the computational overhead introduced by executing applications within a Keystone enclave, as compared to their execution in a conventional, non-isolated environment. To achieve this, a series of carefully controlled experiments were designed and executed within a virtualized RISC-V system based on QEMU.
+
+All benchmarks were executed in an emulated environment configured for the RV64GC architecture, which is representative of 64-bit RISC-V systems targeted by Keystone. The use of QEMU for emulation allowed for fine-grained control over the system environment, ensured repeatability, and eliminated the variability introduced by physical hardware, such as thermal throttling or hardware-specific optimizations. Although virtualized, the emulation accurately models instruction execution, privilege transitions, memory access patterns, and I/O behavior, making it suitable for preliminary performance evaluation.
+
+To evaluate the impact of enclave execution, each benchmark was implemented as a standalone enclave application (referred to as an “eapp”), accompanied by a corresponding host application that manages enclave lifecycle events. The host application, running in user space, is responsible for initializing the enclave, loading the benchmark binary, invoking enclave entry points, and handling edge calls used for communication between the enclave and the host. The enclave application, in contrast, is isolated by the Keystone runtime and contains only the benchmark logic and internal data structures. This modular separation ensures that the same benchmark code can be executed both natively (without an enclave) and securely (within an enclave) without structural modification, enabling an accurate comparative analysis.
+
+The evaluation involved executing each benchmark—Dhrystone and CoreMark—under two distinct configurations:
+
+\begin{enumerate}
+\item \textit{Native Execution:} The benchmark runs as a conventional user-space process within the QEMU-emulated Linux system, without invoking Keystone enclave services.
+\item \textit{Enclave Execution:} The benchmark is loaded into a Keystone enclave, with isolation enforced by the Security Monitor using PMP.
+\end{enumerate}
+
+Each benchmark was run multiple times (typically ten iterations per configuration) to account for performance variability and ensure statistical robustness. For each run, metrics such as total execution time, throughput (measured in DMIPS for Dhrystone and iterations per second for CoreMark), and standard deviation were collected. The comparative analysis focused on the relative performance degradation observed in the enclave configuration, thereby providing a direct measurement of the cost of security.
+
+This methodology enables a nuanced understanding of how Keystone’s isolation features influence real-world performance metrics. The controlled nature of the test environment, coupled with repeated measurement and the use of industry-standard benchmarks, ensures that the results are both meaningful and reproducible. By isolating the effect of enclave execution, this study contributes valuable insights into the trade-offs between security and efficiency in open-source TEE architectures.
+
 \section{Experimental setup}
 %The experimental setup utilizes the Keystone-enhanced QEMU emulator running on an Ubuntu host operating system. This configuration allows for flexible development and testing of Keystone enclaves in a controlled environment without requiring physical RISC-V hardware. The Ubuntu host provides a stable platform for building and deploying enclave binaries, and it facilitates the integration of the Keystone kernel driver and SDK.
 
