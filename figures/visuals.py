@@ -107,3 +107,4 @@ plt.tight_layout()
 # Save the figure as a PNG file
 plt.savefig('dmips_plot.png', dpi=300)  # You can change the filename and dpi as you like
 plt.show()
+
