@@ -1,4 +1,4 @@
-\chapter{Background and System Architecture}
+\chapter{Background}
 \label{chap:background}
 
 
@@ -55,6 +55,8 @@ The enclave lifecycle is structured into three primary phases: creation, executi
 
 Overall, Keystone’s modular and open framework leverages the openness of RISC-V to provide strong security guarantees while enabling flexibility for research and customization. Its minimal TCB, modular layering (Security Monitor, runtime, eapp), and standards-compliant interfaces make it an attractive platform for developing and evaluating secure applications on modern processors \cite{dayeol2019keystone}.
 
+\section{Kyber: A Post-Quantum Cryptography Algorithm}
+
 \section{Comparison with Other TEEs}
 
 Keystone’s architecture sets it apart from existing commercial Trusted Execution Environments such as Intel Software Guard Extensions (SGX) and ARM TrustZone through its openness, modularity, and alignment with the RISC-V ecosystem \cite{dayeol2019keystone}. Unlike the proprietary and largely opaque designs of SGX and TrustZone, Keystone offers a fully open-source platform that supports fine-grained system-level customization and experimental research.
@@ -88,3 +90,6 @@ Furthermore, platform-specific runtime behavior can introduce variability in per
 Finally, enclave lifecycle operations, while one-time costs, also contribute to overall performance. In Keystone, enclave creation and destruction involve validation, hashing (e.g., SHA-3), and context setup, incurring 2M–7M cycles per page for validation and 20k–30k cycles for lifecycle events. These costs are significantly affected by software-based implementations of cryptographic primitives and could be optimized using hardware acceleration \cite{dayeol2019keystone}.
 
 In summary, while TEEs offer minimal performance penalties for compute-bound workloads, substantial overheads can emerge for memory- and I/O-bound applications. These overheads are highly platform-dependent and are influenced by factors such as cache behavior, buffer copying, interrupt handling, and runtime design. Hence, effective use of TEEs requires not only security-aware application design but also performance-aware system integration.
+
+%\section{Post-Quantum Cryptography and Kyber}
+%\section{Performance Considerations for PQC in TEEs}

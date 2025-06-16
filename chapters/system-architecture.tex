@@ -1,4 +1,4 @@
-\chapter{Methodology}
+\chapter{System Architecture and Design}
 \label{chap:methodology}
 The primary objective of this thesis is to assess the performance impact of Keystone’s enclave isolation mechanisms on typical embedded and systems-level workloads. Specifically, the study seeks to quantify the computational overhead introduced by executing applications within a Keystone enclave, as compared to their execution in a conventional, non-isolated environment. To achieve this, a series of carefully controlled experiments were designed and executed within a virtualized RISC-V system based on QEMU.
 
@@ -51,7 +51,11 @@ make debug-connect
 
 Additional details on the build process, dependencies, and configuration options are available in the \textbf{Appendix}.
 
+\section{Kyber in the Enclave}
+\label{sec:kyber-enclave}
+
 \section{Benchmarking tools and metrics}
+\label{sec:benchmarking-tools}
 
 To evaluate the performance impact of the Keystone Trusted Execution Environment (TEE) in a meaningful and comprehensive way, this study uses two well-established synthetic benchmarks: \textit{Dhrystone} and \textit{CoreMark}. Both are widely used in the embedded systems community and are well-supported in the RISC-V ecosystem, making them a natural fit for assessing how Keystone behaves in secure versus non-secure execution modes. These benchmarks were chosen because they capture a wide range of processor behaviors, particularly those relevant to secure enclave execution—such as integer arithmetic, control flow, and memory access patterns.
 
