@@ -53,11 +53,94 @@ The enclave lifecycle is structured into three primary phases: creation, executi
 \label{fig:enclave_lifecycle}
 \end{figure}
 
-Overall, Keystone’s modular and open framework leverages the openness of RISC-V to provide strong security guarantees while enabling flexibility for research and customization. Its minimal TCB, modular layering (Security Monitor, runtime, eapp), and standards-compliant interfaces make it an attractive platform for developing and evaluating secure applications on modern processors \cite{dayeol2019keystone}.
+Keystone’s modular and open framework leverages the openness of RISC-V to provide strong security guarantees while enabling flexibility for research and customization. Its minimal TCB, modular layering (Security Monitor, runtime, eapp), and standards-compliant interfaces make it an attractive platform for developing and evaluating secure applications on modern processors \cite{dayeol2019keystone}. 
+To support secure communication and attestation, Keystone enclaves can integrate modern cryptographic primitives, including emerging post-quantum schemes such as Kyber.
 
 \section{Kyber: A Post-Quantum Cryptography Algorithm}
+\label{sec:kyber}
+
+Kyber is a post-quantum key encapsulation mechanism (KEM) designed to resist attacks from both classical and quantum adversaries. Its security is based on the hardness of the Module Learning With Errors (Module-LWE) problem, a structured lattice problem considered intractable even for quantum computers. Kyber is one of the finalists in the NIST Post-Quantum Cryptography (PQC) competition and has been selected for standardization due to its strong security and performance characteristics \cite{kyber2024}.  % [SOURCE1]
+
+At its core, Kyber is derived from the Lyubashevsky–Peikert–Regev (LPR) encryption framework, which adapts Learning With Errors (LWE) from integer vectors to more efficient polynomial structures. Specifically, Kyber operates in the Module-LWE setting, which balances the structure of Ring-LWE with the flexibility of traditional LWE. This results in strong performance and compact key sizes while preserving security \cite{kyber2024,kyber2021}. % [SOURCE1, BLOG1]
+
+Kyber supports three security levels:
+\begin{itemize}
+    \item \textbf{Kyber-512}, targeting AES-128-level security,
+    \item \textbf{Kyber-768}, targeting AES-192-level security (recommended),
+    \item \textbf{Kyber-1024}, targeting AES-256-level security.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Kyber and RSA: Key and Ciphertext Sizes (in bytes)}
+\label{tab:kyber_sizes}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Scheme} & \textbf{Private Key} & \textbf{Public Key} & \textbf{Ciphertext} \\
+\hline
+Kyber-512 & 1632 & 800 & 768 \\
+Kyber-768 & 2400 & 1184 & 1088 \\
+Kyber-1024 & 3168 & 1568 & 1568 \\
+RSA-3072 & 384 & 384 & 384 \\
+RSA-15360 & 1920 & 1920 & 1920 \\
+\hline
+\end{tabular}
+\end{table}
+
+While RSA keys are somewhat smaller, Kyber maintains significantly better security in the post-quantum context, and its keys are far more compact than those of many alternative PQC candidates such as Classic McEliece \cite{kyber2021}. % [BLOG1]
+
+Kyber is structured as a KEM rather than a traditional public-key encryption (PKE) scheme. Internally, however, it uses a PKE system transformed into a CCA-secure KEM. The KEM exposes a simple API:
+\begin{itemize}
+    \item $(\mathit{pk}, \mathit{sk}) = \texttt{KeyGen}()$
+    \item $(\mathit{ct}, \mathit{ss}) = \texttt{Encapsulate}(\mathit{pk})$
+    \item $\mathit{ss} = \texttt{Decapsulate}(\mathit{sk}, \mathit{ct})$
+\end{itemize}
+
+The encapsulation mechanism makes Kyber especially suitable for protocols like TLS, Signal, and OpenPGP. % [BLOG1]
+
+A simplified pedagogical version called ``Baby Kyber’’ is often used to illustrate the cryptographic structure. Baby Kyber uses polynomials over a small modulus and limited degree to show how private and public keys, as well as ciphertexts, are constructed and manipulated. Encryption relies on adding small random errors to hide the message, while decryption relies on error tolerance due to coefficient scaling. If the message polynomial is scaled appropriately, decryption can recover the original bit string by rounding \cite{kyber2021}. % [BLOG1]
+
+In full Kyber, the parameters are chosen to ensure security and correctness:
+\begin{itemize}
+    \item $n = 256$: polynomial degree
+    \item $k \in \{2, 3, 4\}$: number of polynomials (Kyber-512, 768, 1024)
+    \item $q = 3329$: prime modulus
+    \item $\eta_1, \eta_2$: bounds on error distributions
+    \item $d_u, d_v$: compression factors
+\end{itemize}
+
+Kyber’s performance has been optimized for a variety of platforms. Table~\ref{tab:kyber_perf} shows benchmark results on an Intel Haswell CPU with AVX2 vectorization \cite{kyber2024}. % [SOURCE1]
+
+\begin{table}[h]
+\centering
+\caption{Kyber Performance on Haswell CPU (AVX2 Optimized)}
+\label{tab:kyber_perf}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Variant} & \textbf{KeyGen (cycles)} & \textbf{Encaps (cycles)} & \textbf{Decaps (cycles)} \\
+\hline
+Kyber-512 & 33,856 & 45,200 & 34,572 \\
+Kyber-768 & 52,732 & 67,624 & 53,156 \\
+Kyber-1024 & 73,544 & 97,324 & 79,128 \\
+\hline
+\end{tabular}
+\end{table}
+
+Kyber also includes a variant called \texttt{Kyber-90s}, which replaces the use of SHAKE with AES-256 and SHA2 primitives, enabling further acceleration on platforms with AES instruction support \cite{kyber2024}. % [SOURCE1]
+
+The security of Kyber ultimately reduces to the hardness of the Shortest Vector Problem (SVP) via the Module-LWE problem. Recovering a message or key requires solving an instance of SVP in a structured lattice, a task that remains intractable even with quantum resources\cite{kyber2021}. % [BLOG1]
+
+Due to its efficient structure and compact representation, Kyber has been adopted by numerous organizations:
+\begin{itemize}
+    \item Cloudflare included Kyber in the CIRCL cryptographic library
+    \item Amazon integrated hybrid Kyber modes into AWS KMS
+    \item IBM deployed Kyber in its quantum-secure tape drive
+\end{itemize} % [SOURCE1]
+These deployments demonstrate Kyber’s readiness for practical applications in secure communications, data protection, and cryptographic protocols. 
+The integration of Kyber into TEE frameworks like Keystone is increasingly relevant as systems must remain secure even in the presence of quantum-capable adversaries. TEEs benefit from Kyber’s compact keys and efficient operations, making it a strong candidate for enclave-based key exchange and attestation.
 
 \section{Comparison with Other TEEs}
+\label{sec:comparison_tees}
 
 Keystone’s architecture sets it apart from existing commercial Trusted Execution Environments such as Intel Software Guard Extensions (SGX) and ARM TrustZone through its openness, modularity, and alignment with the RISC-V ecosystem \cite{dayeol2019keystone}. Unlike the proprietary and largely opaque designs of SGX and TrustZone, Keystone offers a fully open-source platform that supports fine-grained system-level customization and experimental research.
 

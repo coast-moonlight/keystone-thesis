@@ -41,4 +41,18 @@ Keystone addresses the limitations of both commercial and academic TEEs by adopt
 
 This thesis is structured to progressively build an understanding of Trusted Execution Environments (TEEs) with a focus on the Keystone framework, moving from conceptual foundations to empirical evaluation and practical system design insights.
 
-This thesis is organized as follows: Chapter~\ref{chap:intro} introduces the motivation for secure computation in untrusted environments, outlines the core contributions of this work, and surveys relevant literature in the domain of Trusted Execution Environments (TEEs). Chapter~\ref{chap:background} presents the technical foundations and system architecture of the Keystone framework, including a comparative analysis with Intel SGX and ARM TrustZone that highlights key design trade-offs and performance considerations. Chapter~\ref{chap:methodology} describes the experimental setup, detailing the virtualized testbed, benchmark selection, parameter tuning, and data collection methods employed to ensure rigorous and reproducible evaluation. Chapter~\ref{chap:results} reports empirical findings and analyzes the impact of system parameters such as CPU core count, memory allocation, and cache size on enclave performance, along with associated overheads and insights. Chapter~\ref{chap:recommendations} synthesizes these results into practical configuration guidelines for deploying Keystone TEEs across diverse workload scenarios and identifies architectural bottlenecks for future improvements. Finally, Chapter~\ref{chap:conclusion} summarizes the main contributions and discusses their implications for secure system design, outlining promising directions for further research including hardware extensions and formal verification.
+This thesis is organized as follows: 
+\\
+Chapter~\ref{chap:intro} introduces the motivation for secure computation in untrusted environments, outlines the core contributions of this work, and surveys relevant literature in the domain of Trusted Execution Environments (TEEs). 
+
+Chapter~\ref{chap:background} provides foundational background on Trusted Execution Environments (TEEs), with a particular emphasis on the Keystone framework and the RISC-V architecture. It also introduces Kyber, a post-quantum key encapsulation mechanism, and analyzes how its characteristics align with secure enclave execution. 
+
+Chapter~\ref{chap:methodology} describes the experimental setup, detailing the virtualized testbed, benchmark selection, parameter tuning, and data collection methods employed to ensure rigorous and reproducible evaluation. 
+
+Chapter~\ref{chap:benchmarking} reports empirical findings and analyzes the impact of system parameters such as CPU core count, memory allocation, and cache size on enclave performance, along with associated overheads and insights. 
+
+%Chapter~\ref{chap:recommendations} synthesizes these results into practical configuration guidelines for deploying Keystone TEEs across diverse workload scenarios and identifies architectural bottlenecks for future improvements.%
+
+Chapter~\ref{chap:discussion} discusses the trade-offs revealed by the experiments and considers the implications for future secure computing architectures.
+
+Finally, Chapter~\ref{chap:conclusion} summarizes the main contributions and discusses their implications for secure system design, outlining promising directions for further research including hardware extensions and formal verification.
