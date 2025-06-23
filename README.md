@@ -1,4 +1,4 @@
-# Thesis: Evaluating RISC-V Enclaves: Performance Benchmarks and Configuration Best Practices
+# Master Thesis: Evaluating RISC-V Enclaves: Performance Benchmarks and Configuration Best Practices
 
 This repository contains the LaTeX source code for my master's thesis titled **"Evaluating RISC-V Enclaves: Performance Benchmarks and Configuration Best Practices"**. The goal of this thesis is to evaluate the performance of Keystone enclaves, a Trusted Execution Environment (TEE) framework for RISC-V platforms. The evaluation focuses on identifying performance bottlenecks and providing configuration best practices to optimize enclave execution.
 
