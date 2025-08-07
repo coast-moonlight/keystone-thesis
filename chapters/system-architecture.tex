@@ -17,106 +17,177 @@ Each benchmark was run multiple times (typically ten iterations per configuratio
 
 This methodology enables a nuanced understanding of how Keystone’s isolation features influence real-world performance metrics. The controlled nature of the test environment, coupled with repeated measurement and the use of industry-standard benchmarks, ensures that the results are both meaningful and reproducible. By isolating the effect of enclave execution, this study contributes valuable insights into the trade-offs between security and efficiency in open-source TEE architectures.
 
-\section{Experimental setup}
-%The experimental setup utilizes the Keystone-enhanced QEMU emulator running on an Ubuntu host operating system. This configuration allows for flexible development and testing of Keystone enclaves in a controlled environment without requiring physical RISC-V hardware. The Ubuntu host provides a stable platform for building and deploying enclave binaries, and it facilitates the integration of the Keystone kernel driver and SDK.
+\section{Experimental Setup}
+\label{sec:experimental-setup}
 
-The experimental setup employed in this study was carefully designed to facilitate reliable, repeatable testing of the Keystone Trusted Execution Environment (TEE) without the need for physical RISC-V hardware. To this end, a virtualized testbed was constructed using a RISC-V specific fork of the QEMU emulator, hosted on an Ubuntu 22.04 LTS system. This emulated environment provided a high degree of control over the system configuration, allowing for flexible testing of Keystone enclaves in isolation from physical hardware constraints, while still accurately modeling the behavior of a real RISC-V system.
+The experimental setup was designed to enable reliable, repeatable evaluation of the Keystone Trusted Execution Environment (TEE) without requiring physical RISC-V hardware. To achieve this, a virtualized testbed was constructed using a RISC-V-specific fork of the QEMU emulator running on an Ubuntu 22.04 LTS host system. This emulated environment provides fine-grained control over system configuration, facilitating flexible testing of Keystone enclaves while accurately modeling a real RISC-V platform.
 
-QEMU, an open-source hardware emulator, was configured to emulate the RV64GC (64-bit general-purpose) RISC-V architecture, which is fully compatible with Keystone’s software stack. The choice of RV64 as the target architecture reflects Keystone’s intended deployment scenario on modern RISC-V platforms and allows full access to the enclave memory protection and privilege separation mechanisms supported by the Security Monitor.
+QEMU, an open-source hardware emulator, was configured to emulate the RV64GC (64-bit general-purpose) RISC-V architecture, fully compatible with Keystone’s software stack. This choice reflects Keystone’s target deployment on modern RISC-V platforms and allows access to enclave memory protection and privilege separation features managed by the Keystone Security Monitor. Ubuntu 22.04 LTS was selected for its long-term support, stability, and compatibility with the Keystone development toolchain, serving as a robust platform for building all components including the QEMU binary, Keystone kernel driver, runtime, and benchmark binaries.
 
-The host operating system—Ubuntu 22.04—was chosen for its long-term support, stable kernel interfaces, and compatibility with the Keystone development toolchain. It served as the platform for building the QEMU binary, compiling the Keystone components, and orchestrating the virtual machine environment in which all benchmarks were executed.
+The build process utilizes a combination of \texttt{Make} and Buildroot. Buildroot generates the embedded Linux root filesystem, cross-compiles necessary system libraries, and configures the Linux kernel running inside the QEMU guest. The Make-based system orchestrates compilation and deployment of Keystone components such as the runtime, Security Monitor, and kernel modules, ensuring reproducible builds targeting the QEMU RV64 environment.\footnote{Key configuration parameters include the QEMU platform, RV64 CPU architecture, and Buildroot settings optimized for Keystone enclave support.} 
 
-The build process for Keystone relied on a combination of Make and Buildroot. Buildroot, an established tool for generating embedded Linux systems, was used to construct the root filesystem, cross-compile essential system libraries, and configure the Linux kernel used in the virtual guest. The Make-based build system provided streamlined control over component compilation and deployment, enabling reproducible builds of the Keystone runtime, Security Monitor, and associated kernel modules. During the build phase, key configuration parameters were selected, including the choice of QEMU as the target platform, the RV64 architecture, and the specific Buildroot configuration required to support the Keystone kernel driver and enclave runtime environment.
+Launching the virtualized system is managed through a Makefile-driven workflow defined in the \texttt{run.mk} file, which encapsulates QEMU configuration and execution commands. Several runtime parameters are exposed as Makefile variables for flexibility, including:
 
-After successful compilation, the Keystone system was launched within QEMU using the command:
+\begin{itemize}
+    \item \texttt{QEMU\_PORT} (default: 9821) — SSH port forwarding to access the QEMU guest.  
+    \item \texttt{QEMU\_DBG\_PORT} (default: \texttt{QEMU\_PORT} + 1) — TCP port for GDB debugging.  
+    \item \texttt{QEMU\_RAM\_SIZE} (default: 128M) — amount of emulated RAM.  
+    \item \texttt{QEMU\_CORE\_COUNT} (default: 2) — number of virtual CPU cores.
+\end{itemize}
+
+QEMU is launched with flags specifying the machine type (\texttt{virt}), boot ROM and firmware, kernel and root filesystem images, VirtIO devices for block storage and networking, and network forwarding for SSH access. Optionally, a cache plugin \cite{mandour2021cache} can be enabled to provide detailed logging of cache events such as hits, misses, and evictions. This plugin offers deeper insight into the memory hierarchy’s behavior during enclave execution, aiding analysis of performance impacts due to cache and memory isolation overhead.
+
+The cache plugin \cite{mandour2021cache} parameters are fully configurable at runtime, including:
+
+\begin{itemize}
+    \item Instruction cache: \texttt{icachesize}, \texttt{iblksize}, \texttt{iassoc} — size, block size, and associativity.  
+    \item Data cache: \texttt{dcachesize}, \texttt{dblksize}, \texttt{dassoc} — analogous data cache parameters.  
+    \item Eviction policy: \texttt{evict=lru|rand|fifo}.  
+    \item Logging limits: \texttt{limit=TOP\_N} for number of top thrashing instructions to record.  
+    \item Number of cores monitored: \texttt{cores=N\_CORES}.
+\end{itemize}
+
+For example, to configure the cache plugin with 8 KB L1 instruction and data caches, 64-byte blocks, 4-way associativity, 2 cores, and LRU eviction, the following command is used:
 
 \begin{verbatim}
-make run
+make QEMU_PLUGIN_ARGS="dcachesize=8192,dassoc=4,dblksize=64, \
+icachesize=8192,iassoc=4,iblksize=64,cores=2,evict=lru" run
 \end{verbatim}
 
-This command initiated the full virtual system, including the Keystone Security Monitor—responsible for managing enclave creation, destruction, and memory isolation—as well as a minimal Linux operating system running in supervisor mode within the QEMU guest. The Linux environment within QEMU was configured to support manual loading of the Keystone kernel driver, which was necessary to enable enclave functionality. Once the system was booted, the kernel driver was inserted using the following command:
+While the plugin logs comprehensive cache activity, it cannot isolate cache events exclusively caused by enclave operations. Therefore, cache data interpretation requires caution when attributing performance effects specifically to enclaves.
+
+Debugging support is available by enabling the \texttt{KEYSTONE\_DEBUG} flag, which starts QEMU’s built-in GDB server and halts execution at startup for remote debugging. After booting the QEMU guest, the Keystone kernel driver is loaded manually using:
 
 \begin{verbatim}
 modprobe keystone-driver
 \end{verbatim}
 
-This step completed the initialization of the enclave infrastructure, allowing benchmark binaries to be securely loaded into enclaves and executed with isolation enforced by the Security Monitor.
+This step initializes enclave functionality, allowing benchmark binaries to be securely loaded and executed within isolated memory regions managed by the Security Monitor.
 
-For debugging purposes, additional support was enabled through QEMU’s built-in GDB server. This allowed low-level inspection of the system state, including memory regions, control registers, and exception handlers. When debugging was required, Keystone was recompiled with debugging features enabled by setting the appropriate build flag, and execution was resumed using GDB connectivity:
+Additional Makefile targets enable remote command execution over SSH and connection to the RISC-V GDB debugger for low-level inspection of enclave state. Debugging requires recompiling Keystone with debugging enabled, typically invoked as:
 
 \begin{verbatim}
 KEYSTONE_DEBUG=y make run
 make debug-connect
 \end{verbatim}
 
-Additional details on the build process, dependencies, and configuration options are available in the \textbf{Appendix}.
+QEMU’s built-in GDB server provides visibility into registers, memory, and exceptions, aiding low-level inspection and troubleshooting of enclave operations.
+
+Overall, this integrated virtualized environment and build system provide a flexible, controlled platform for detailed evaluation of Keystone’s performance and security properties. The modular Makefile-driven workflow streamlines configuration, deployment, and debugging, enabling efficient development and benchmarking without dependence on physical hardware. %Further technical details on build dependencies and configuration options are documented in the \textbf{Appendix}.
 
 \section{Kyber in the Enclave}
 \label{sec:kyber-enclave}
 
+To comprehensively evaluate the performance characteristics of cryptographic workloads within a trusted execution environment, this study incorporates the Kyber key encapsulation mechanism (KEM), a lattice-based post-quantum cryptographic primitive. Kyber has garnered significant attention as a leading candidate in the NIST post-quantum cryptography standardization process, offering a robust balance of security, performance, and suitability for deployment on resource-constrained devices. Its integration within a secure enclave environment highlights the practical implications of deploying advanced cryptographic primitives where hardware-based isolation is critical for protecting sensitive operations and data.
+
+The Kyber implementation employed in this work is derived from a well-maintained, lightweight C reference library, chosen for its portability and compatibility with embedded systems. This implementation was integrated into the Keystone enclave framework with minimal modification to preserve fidelity to the original cryptographic routines and avoid introducing artifacts that might bias performance measurement. Both the IND-CPA (indistinguishability under chosen-plaintext attack) and IND-CCA (indistinguishability under chosen-ciphertext attack) variants of Kyber were considered, with the primary cryptographic operations — key generation, encapsulation, and decapsulation — being individually invoked inside the enclave to facilitate granular performance profiling.
+
+The following critical Kyber functions were separately instrumented and timed to capture their distinct computational demands:
+
+\begin{itemize}
+    \item \texttt{indcpa\_keypair} — Key pair generation for the IND-CPA variant.
+    \item \texttt{indcpa\_enc} — Encryption (encapsulation) under IND-CPA assumptions.
+    \item \texttt{indcpa\_dec} — Decryption (decapsulation) under IND-CPA assumptions.
+    \item \texttt{kyber\_keypair} — Enhanced key pair generation supporting IND-CCA.
+    \item \texttt{kyber\_encaps} — IND-CCA-compliant encapsulation.
+    \item \texttt{kyber\_decaps} — IND-CCA-compliant decapsulation.
+\end{itemize}
+
+Each of these operations was executed across the five representative system configurations defined in Section~\ref{sec:param-variation}, which span a broad range of memory capacities, core counts, and execution modes. To ensure measurement accuracy and reduce variability from transient system states, ten iterations were run per configuration with the first iteration discarded as a warm-up phase. Execution timing was obtained using the enclave’s internal high-resolution timer API, capturing secure-world runtime exclusively. In parallel, external system-level metrics — such as CPU usage, memory footprint, and context switching counts — were gathered from the host environment to provide contextual insights into system overhead and resource utilization.
+
+Unlike the synthetic benchmarks Dhrystone and CoreMark, Kyber’s workload is characterized by its intensive use of polynomial arithmetic, noise sampling, and number-theoretic transform (NTT) operations, all of which impose a distinct computational profile. Notably, Kyber exhibits a predominantly CPU-bound execution pattern, with relatively limited memory demands. This profile contrasts with cache- and memory-intensive workloads, which often demonstrate sensitivity to cache size, associativity, and eviction policies. Additionally, Kyber’s current implementation executes sequentially without exploiting parallelism or multithreading, making it well-suited for analysis within single-threaded enclave contexts.
+
+It is important to note that the QEMU cache modeling plugin \cite{mandour2021cache} utilized for this study provides comprehensive logging of cache events and misses across the entire emulated system rather than isolating activity specific to the enclave or Kyber operations. Consequently, while cache plugin data enriches understanding of system-wide memory behavior, it does not enable direct attribution of cache hits or misses exclusively to Kyber’s execution. This limitation underscores the challenges of fine-grained performance attribution within complex emulation environments but does not diminish the value of combined timing and system-level metrics in capturing overall workload behavior.
+
+Collectively, the measurement approach — leveraging both enclave-internal timers and host-level monitoring — facilitates a nuanced characterization of Kyber’s execution within a trusted environment. This methodology reveals how cryptographic routines with intricate arithmetic and memory access patterns perform under enclave constraints, including the overhead introduced by secure isolation and the impact of varying system resources such as memory size and CPU core availability.
+
+Kyber’s inclusion in the benchmark suite extends the evaluation beyond traditional CPU-bound synthetic workloads, providing a practical example of a security-critical, compute-heavy application with significant implications for post-quantum readiness in embedded and secure computing contexts. The insights derived from profiling Kyber within Keystone enclaves inform considerations around enclave design, resource allocation, and the feasibility of deploying advanced cryptographic primitives in isolated environments with minimal performance degradation.
+
+Kyber serves as a representative case study for secure, non-parallelizable cryptographic workloads executed within enclave boundaries. Its performance characteristics complement those observed in more generic benchmarks by illuminating the interplay between cryptographic computation, enclave isolation overhead, and system resource scaling. This comprehensive evaluation underpins recommendations for enclave provisioning and optimization in future secure computing platforms.
+
+
 \section{Benchmarking tools and metrics}
 \label{sec:benchmarking-tools}
 
-To evaluate the performance impact of the Keystone Trusted Execution Environment (TEE) in a meaningful and comprehensive way, this study uses two well-established synthetic benchmarks: \textit{Dhrystone} and \textit{CoreMark}. Both are widely used in the embedded systems community and are well-supported in the RISC-V ecosystem, making them a natural fit for assessing how Keystone behaves in secure versus non-secure execution modes. These benchmarks were chosen because they capture a wide range of processor behaviors, particularly those relevant to secure enclave execution—such as integer arithmetic, control flow, and memory access patterns.
+To evaluate the performance impact of the Keystone Trusted Execution Environment (TEE) comprehensively, this study employs two well-established synthetic benchmarks: \textit{Dhrystone} and \textit{CoreMark}. Both are widely used in the embedded systems community and are well-supported in the RISC-V ecosystem, making them natural choices to assess Keystone’s behavior in secure versus non-secure execution modes. These benchmarks capture a broad spectrum of processor activities relevant to enclave execution—such as integer arithmetic, control flow, and memory access patterns.
 
-The Dhrystone benchmark\cite{weiss2002dhrystone} has been around for decades and was originally designed to measure general-purpose processor performance, especially in environments where floating-point operations and file I/O are not a major concern. Its focus is on integer calculations and logical control structures—things like loops, function calls, and basic data handling—which are typical in many embedded and real-time applications. Because of its simplicity and minimal memory usage, Dhrystone\cite{weiss2002dhrystone} provides a good baseline measure of a processor’s raw computing capability. For this study, the RISC-V version of Dhrystone\cite{weiss2002dhrystone} was obtained from the official \texttt{riscv-tests} repository to ensure that it ran correctly on the target hardware. The benchmark was executed twice under identical conditions—once in a standard, non-secure mode, and once within a Keystone enclave. This setup made it possible to measure the specific performance overhead introduced by Keystone’s security features, such as memory isolation and the cost of switching between secure and non-secure execution contexts.
+The Dhrystone benchmark~\cite{weiss2002dhrystone} has been used for decades to measure general-purpose processor performance, especially in scenarios where floating-point operations and file I/O are not critical. Its focus on integer calculations and control structures—such as loops, function calls, and basic data handling—is representative of many embedded and real-time applications. Thanks to its simplicity and minimal memory usage, Dhrystone~\cite{weiss2002dhrystone} provides a clean baseline measure of raw processor capability. For this study, the RISC-V implementation of Dhrystone was obtained from the official \texttt{riscv-tests} repository to ensure accurate execution on the target platform. The benchmark was executed twice under identical conditions—once in native, non-secure mode and once inside a Keystone enclave. This dual setup facilitates precise measurement of the performance overhead imposed by Keystone’s security mechanisms, including memory isolation and context-switching between secure and non-secure worlds.
 
-Dhrystone results are typically expressed in terms of "Dhrystones per second," which simply counts how many iterations of the benchmark are completed in one second. To make the numbers more meaningful across different architectures, these results are often normalized to Dhrystone MIPS (DMIPS), which estimates how many millions of instructions per second the processor is effectively delivering. This helps smooth out differences between instruction sets and gives a more comparable figure. In the context of this study, comparing DMIPS between enclave and non-enclave runs highlights how much raw performance is lost (or retained) when using the TEE.
+Dhrystone results are typically reported as "Dhrystones per second," quantifying how many benchmark iterations complete in one second. For broader comparability across different processor architectures, these results are normalized to Dhrystone MIPS (DMIPS), which estimates the effective instruction throughput in millions of instructions per second. This normalization allows meaningful performance comparisons by smoothing out architectural differences. In this study, comparing DMIPS between enclave and native executions highlights the raw performance impact of enabling the TEE.
 
-To get a broader picture of system performance—particularly one that includes moderate memory use and more complex workloads—the CoreMark benchmark \cite{gal2012exploring} was also used. Developed by the Embedded Microprocessor Benchmark Consortium (EEMBC), CoreMark \cite{gal2012exploring} was designed to overcome some of the limitations of Dhrystone by providing a workload that’s a bit closer to real-world embedded applications. It includes tasks like linked list manipulation, matrix operations, and finite state machine processing, all of which are common in software running on embedded systems. While CoreMark \cite{gal2012exploring} is still CPU-focused, it introduces a moderate level of memory interaction through dynamic data structures, which allows it to reveal performance issues that Dhrystone might miss—especially those related to cache usage or memory protection features within a TEE.
+To complement Dhrystone and gain insight into more complex system behavior, the CoreMark benchmark~\cite{gal2012exploring} was also employed. Developed by the Embedded Microprocessor Benchmark Consortium (EEMBC), CoreMark~\cite{gal2012exploring} addresses some limitations of Dhrystone by incorporating workloads that are closer to real-world embedded applications. It includes linked list manipulations, matrix operations, and finite state machine processing—tasks common in embedded software. Although still CPU-centric, CoreMark~\cite{gal2012exploring} exercises the memory subsystem more heavily through dynamic data structures, thereby exposing performance effects related to cache usage and memory protection features within a TEE.
 
-The version of CoreMark \cite{gal2012exploring} used in this study came from the SiFive repository available on GitHub at \url{https://github.com/sifive/benchmark-coremark}, which provides a version optimized for RISC-V systems and ready to work with Keystone. Like Dhrystone \cite{weiss2002dhrystone}, CoreMark \cite{gal2012exploring} was run in both native and enclave modes to compare performance under each. Its results are reported in terms of "Iterations Per Second" (IPS), which tells us how many complete runs of the benchmark are executed every second. Since CoreMark includes both arithmetic and memory operations, IPS gives a more holistic view of how the system is performing—not just the processor, but also the memory subsystem.
+The CoreMark version used in this study was sourced from the SiFive repository on GitHub\footnote{\url{https://github.com/sifive/benchmark-coremark}, accessed August 2025}, providing a RISC-V-optimized build compatible with Keystone. Like Dhrystone, CoreMark was run in both native and enclave modes, with results reported as "Iterations Per Second" (IPS), indicating how many complete benchmark runs occur per second. Because CoreMark combines arithmetic and memory operations, IPS delivers a more comprehensive view of system performance, reflecting both CPU and memory subsystem efficiency.
 
-Beyond the main performance numbers (DMIPS for Dhrystone and IPS for CoreMark), this study also looked at a few supporting metrics to better understand system behavior. The first is overall execution time, which refers to how long it takes (in real-world, wall-clock time) to run each benchmark. Comparing execution time in enclave vs. non-enclave modes helps quantify latency introduced by secure execution. This kind of delay might come from things like extra memory checks, context switching, or other internal mechanisms used to isolate the enclave from the rest of the system.
+In addition to primary performance metrics—DMIPS for Dhrystone and IPS for CoreMark—this study also analyzed supporting metrics to better characterize system behavior. Overall execution time, measured in wall-clock seconds, was recorded for each benchmark run. Comparing execution times between enclave and native modes quantifies latency introduced by secure execution, including overheads from memory protection, context switching, and enclave isolation mechanisms.
 
-Another important metric is variability—specifically, the standard deviation of benchmark results across multiple runs. Each benchmark was executed several times under identical conditions, and the standard deviation was calculated to determine how consistent the performance was. Low standard deviation means the system performs reliably from run to run, while high deviation might indicate that performance is sensitive to system noise, scheduling delays, or other environmental factors.
+Variability across runs was assessed through the standard deviation of benchmark results over multiple iterations. A low standard deviation signifies consistent and reliable performance, whereas higher variability might indicate sensitivity to system noise, scheduling delays, or other environmental factors.
 
-Both Dhrystone\cite{weiss2002dhrystone} and CoreMark\cite{gal2012exploring} are CPU-intensive, which is exactly what makes them useful in this context. Dhrystone focuses narrowly on integer operations and control flow, giving a clean look at raw processor performance. CoreMark, on the other hand, introduces a bit more complexity and memory interaction, which makes it better suited for revealing the broader impact of Keystone’s security mechanisms. Neither benchmark uses file I/O or persistent storage, which means that this study does not explore storage-related features of the TEE, such as secure disk access or file encryption. That’s outside the scope here and would require a different kind of benchmarking approach.
+Both Dhrystone~\cite{weiss2002dhrystone} and CoreMark~\cite{gal2012exploring} are CPU-intensive benchmarks, making them particularly useful for this study’s focus on processor and memory subsystem behavior under secure execution. Dhrystone targets raw integer and control flow performance, offering a clear view of base processor throughput, while CoreMark’s more sophisticated workload reveals broader impacts of the TEE’s security mechanisms, especially regarding memory interactions. Neither benchmark involves file I/O or persistent storage; therefore, this study does not assess storage-related TEE features such as secure disk access or file encryption, which would require alternative benchmarking approaches.
 
-By using both benchmarks together—one simple and focused, the other broader and more realistic—this study creates a well-rounded picture of how Keystone affects performance. The addition of execution time and variability analysis provides further context, helping to separate consistent performance overhead from sporadic slowdowns or system noise. Overall, this methodology provides a clear, detailed view of the trade-offs involved when securing execution through a TEE on RISC-V platforms.
+By combining these two benchmarks with detailed timing and variability analysis, this study provides a well-rounded and nuanced understanding of the trade-offs involved in securing execution via Keystone enclaves on RISC-V platforms.
 
 \section{Parameter Variation Strategy}
 \label{sec:param-variation}
 
-To examine the influence of microarchitectural cache parameters on enclave performance, this study employed a structured variation of Level-1 (L1) cache configurations using QEMU's cache modeling capabilities. The experimental objective was to isolate the impact of cache size, associativity, eviction policy, and core count on the performance of secure and non-secure workloads in a controlled emulation environment.
+To investigate the architectural impact on enclave execution, this study systematically varied system parameters including memory size, core count, execution mode (sequential vs parallel), and cache configurations using QEMU’s cache modeling capabilities. The aim was to understand how these factors influence the behavior of trusted and non-trusted workloads under different resource constraints.
 
-Cache modeling was enabled through the QEMU TCG plugin framework \cite{mandour2021cache}, which simulates idealized, per-core instruction and data caches. While not microarchitecturally cycle-accurate, this plugin supports a configurable cache hierarchy, enabling systematic exploration of cache behaviors relevant to trusted execution environments.
+Cache simulation was conducted using the QEMU TCG plugin framework \cite{mandour2021cache}, which models per-core instruction and data caches in an idealized fashion. While this plugin is not cycle-accurate and does not isolate enclave-specific behavior, it enables consistent modeling of cache accesses and miss patterns across the entire QEMU runtime. This was sufficient to observe cache-related effects caused by workload behavior in different configurations.
 
-Four key experimental scenarios were defined:
+To avoid excessive experimental overhead and redundant trends, five representative system configurations were selected. These were chosen to cover a wide range of memory capacities, CPU core counts, and execution modes. Each configuration enables a specific type of insight, ensuring a diverse but manageable evaluation matrix.
 
-\begin{enumerate}
-    \item \textbf{Baseline Configuration:} A minimal cache setup with 8\,KB instruction and data caches, 4-way associativity, and LRU eviction.
-    \item \textbf{Larger Cache Scenario:} An expanded L1 cache configuration with 32\,KB size and 8-way associativity to evaluate the effect of reduced cache miss rates.
-    \item \textbf{Multicore Simulation:} A four-core configuration with private per-core caches to study inter-core effects such as contention and cache coherence approximations.
-    \item \textbf{Eviction Policy Sensitivity:} A fixed-size cache using alternative eviction strategies (FIFO and random) to assess their influence on enclave memory behavior.
-\end{enumerate}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|c|p{7.5cm}|}
+\hline
+\textbf{Config Name} & \textbf{RAM} & \textbf{Cores} & \textbf{Execution} & \textbf{Rationale} \\
+\hline
+Low-End Baseline     & 64M         & 1             & Sequential         & Serves as the minimal configuration to establish baseline performance. Useful for understanding enclave overhead under tight resource constraints. \\
+\hline
+Balanced Parallel    & 128M        & 2             & Parallel           & Captures early-stage multicore scaling behavior. Highlights effects of light parallelism under modest memory availability. \\
+\hline
+Mid-Range Sequential & 256M        & 4             & Sequential         & Enables evaluation of scaling effects due to additional cores and memory, while keeping execution sequential to avoid parallel noise. \\
+\hline
+High-End Parallel    & 512M        & 6             & Parallel           & Represents a well-provisioned system where both memory and core resources are sufficient. Useful for observing near-ideal parallel execution. \\
+\hline
+Max Capacity Stress  & 2G          & 10            & Parallel           & Tests the upper bounds of simulated platform capacity. Helps identify performance saturation and the point of diminishing returns. \\
+\hline
+\end{tabular}
+\caption{Summary of representative configurations used in performance evaluation.}
+\end{table}
 
-All scenarios maintained a fixed block size of 64 bytes to preserve spatial locality characteristics. The same set of benchmarks—Dhrystone and CoreMark—was executed under each configuration, both in native and enclave modes, to quantify differences in execution time, throughput, and cache performance.
+Several other configurations—such as single-core setups with excessive memory or high-core setups with limited memory—were explored during preliminary testing. However, they offered little additional insight beyond what was observable in the selected set. For instance, excessive memory on a single core often led to underutilization, while many-core systems with small memory pools frequently resulted in excessive context switching. Both behaviors were captured effectively by existing selected configurations.
 
-The plugin-generated metrics included instruction and data cache accesses, miss rates, and identification of cache-thrashing instructions. While detailed configuration parameters, plugin invocation commands, and sample output logs are essential for reproduction, they are provided in Appendix~\ref{appendix:cache-plugin} to avoid interrupting the main methodological flow.
+Across all system configurations, three cache profiles were tested: a baseline setup with 8\,KB 4-way LRU caches, a larger 32\,KB 8-way configuration, and a fixed-size cache using FIFO and random eviction strategies. A consistent block size of 64 bytes was used to preserve spatial locality. Although the cache plugin logs system-wide activity, observed trends were analyzed in conjunction with benchmark behavior to infer their likely contributions to overall performance variation.
 
-By varying one parameter set at a time while controlling for others, this approach facilitated a clear attribution of observed performance differences to specific architectural characteristics. The resulting data informed the broader analysis of how cache-aware design considerations can impact enclave performance in systems based on the Keystone framework.
+Benchmarks were run in both native and enclave execution modes to enable direct comparisons. This design facilitated the isolation of architectural performance trends and the specific overhead introduced by trusted execution.
 
 \section{Data Collection and Analysis Procedures}
 \label{sec:data-collection}
 
-To ensure that the performance evaluation of enclave execution is both statistically robust and reproducible, a systematic approach was taken to data collection and analysis. All benchmarks were executed within the same virtualized RISC-V environment described in Section~\ref{chap:methodology}, with controlled cache parameters as outlined in Section~\ref{sec:param-variation}.
+All benchmarks were executed within a consistent virtualized RISC-V environment using QEMU. For each selected configuration, both Dhrystone and CoreMark benchmarks were run in native and enclave modes to capture the impact of enclave isolation under different resource and cache conditions.
 
-Each benchmark (Dhrystone and CoreMark) was executed under two configurations: native execution and enclave execution. For every configuration, a minimum of ten independent iterations was conducted to account for runtime variability. Execution time was measured using wall-clock timing as reported by the host Linux environment inside QEMU. Benchmark-specific performance metrics—Dhrystone MIPS (DMIPS) and CoreMark iterations per second (IPS)—were recorded after each run.
+Each experiment consisted of ten executions. To reduce variance caused by warm-up behavior, the first run was discarded, and the remaining nine were used to compute average performance. Key performance metrics included total wall-clock execution time, benchmark throughput (DMIPS or iterations/sec), and standard deviation.
 
-The collected data for each experiment included:
+In addition to these primary measurements, system-level runtime statistics were collected from within the guest Linux environment. These included:
 
 \begin{itemize}
-    \item Total execution time (seconds)
-    \item Benchmark throughput (DMIPS or IPS)
-    \item Standard deviation and coefficient of variation
-    \item Cache miss rates (instruction/data) when applicable
+    \item User and system CPU time
+    \item Maximum memory usage (RSS)
+    \item Minor and major page faults
+    \item Voluntary and involuntary context switches
 \end{itemize}
 
-To mitigate the effects of transient system behavior, the first run of each benchmark was discarded as a warm-up iteration. The remaining samples were then averaged, and both the mean and standard deviation were computed. These values were used to assess not only the central tendency of performance, but also the stability of enclave execution under different cache configurations.
+These metrics were essential to understanding how different system configurations affected workload behavior. For example, high numbers of involuntary context switches in parallel configurations often indicated memory contention or over-subscription of CPU cores.
 
-For cache-sensitive experiments, data was further enriched using QEMU's cache modeling plugin \cite{mandour2021cache}. This provided detailed logging of instruction and data accesses, cache miss counts, and identification of high-miss instructions. From these logs, miss rates were extracted and correlated with execution behavior. Selected logs and plugin outputs are included in Appendix~\ref{appendix:cache-plugin}.
+Cache-related metrics were gathered using the QEMU cache plugin, which logs all instruction and data cache accesses and misses at the system level. Although enclave-specific cache statistics could not be isolated, the relative trends between native and enclave executions under identical configurations allowed for meaningful comparative analysis.
 
-Statistical analysis was conducted using standard descriptive statistics. Where relevant, normalized overhead values were computed to express enclave slowdown as a percentage increase in execution time or a reduction in throughput compared to the native baseline. These comparative metrics provide a clearer view of the cost of enclave isolation across various architectural conditions.
+Performance overhead introduced by enclave execution was quantified using the percentage increase in execution time compared to native mode, calculated as:
 
-The consistent use of controlled environments, repeated measurements, and structured analysis ensures that the results presented in subsequent chapters are both methodologically sound and analytically valid.
+\[
+\text{Overhead (\%)} = \left( \frac{\text{Enclave Time} - \text{Native Time}}{\text{Native Time}} \right) \times 100
+\]
+
+This normalized metric enabled consistent cross-comparison between configurations with vastly different execution baselines.
+
+All benchmark scripts, plugin configurations, and raw logs were version-controlled and archived. Detailed plugin output, configuration parameters, and system call traces are provided in Appendix~\ref{appendix:cache-plugin} for transparency and reproducibility.

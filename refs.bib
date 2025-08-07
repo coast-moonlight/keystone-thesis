@@ -130,3 +130,115 @@ doi = {10.1109/ACCESS.2021.3112202}
   note         = {Accessed: 2025-06-18},
   howpublished = {\url{https://cryptopedia.dev/posts/kyber/}}
 }
+
+@inproceedings{yu2022elasticlave,
+  author       = {Yu, Zhijingcheng and Shinde, Shweta and Carlson, Trevor E. and Saxena, Prateek},
+  title        = {Elasticlave: An Efficient Memory Model for Enclaves},
+  booktitle    = {31st USENIX Security Symposium (USENIX Security ’22)},
+  year         = {2022},
+  pages        = {4111--4128},
+  publisher    = {USENIX Association},
+  address      = {Boston, MA},
+  url          = {https://www.usenix.org/conference/usenixsecurity22/presentation/yu-jason},
+  annotation   = {Introduces Elasticlave, a shared-memory TEE model achieving ~10% overhead vs 100×–1000× for spatial isolation.}
+}
+
+@article{orenbach2023eleos,
+  author       = {Orenbach, Daniel and others},
+  title        = {Eleos: A Secure Enclave Interface via Self-Paging},
+  journal      = {arXiv preprint arXiv:2504.16251},
+  year         = {2025},
+  annotation   = {Demonstrates that an enclave-managed virtual memory (self‑paging) can significantly reduce context-switch and cache pollution overheads.}
+}
+
+@article{lee2022cerberus,
+  author       = {Lee, Dayeol and others},
+  title        = {Cerberus: A Formal Approach to Secure and Efficient Enclave Memory Sharing},
+  journal      = {arXiv preprint arXiv:2209.15253},
+  year         = {2022},
+  annotation   = {Presents a formally verified enclave memory-sharing model on Keystone with secure sharing and improved performance.}
+}
+
+@inproceedings{akkram2020scientific,
+  author    = {Akram, Ayaz and Giannakou, Anna and Akella, Venkatesh and Lowe-Power, Jason and Peisert, Sean},
+  title     = {Performance Analysis of Scientific Computing Workloads on Trusted Execution Environments},
+  booktitle = {arXiv preprint arXiv:2010.13216},
+  year      = {2020},
+  annotation= {Evaluates SGX and SEV performance overheads (1.2×–126× slowdown seen).}
+}
+
+@article{kumar2022sgxgauge,
+  author    = {Kumar, Sandeep and Panda, Abhisek and Sarangi, Smruti R.},
+  title     = {A Comprehensive Benchmark Suite for Intel SGX},
+  journal   = {arXiv preprint arXiv:2205.06415},
+  year      = {2022},
+  annotation= {Introduces SGXGauge—benchmark overheads spike when SGX enclave memory exceeds EPC size.}
+}
+
+@article{krahn2020teemon,
+  author    = {Krahn, Robert and Dragoti, Donald and Gregor, Franz and others},
+  title     = {TEEMon: A Continuous Performance Monitoring Framework for TEEs},
+  journal   = {arXiv preprint arXiv:2012.06554},
+  year      = {2020},
+  annotation= {Runtime TEE performance monitor with 5–17 % overhead, helpful for diagnosing bottlenecks.}
+}
+
+@article{turn0search2_li,
+  author = {Li, Xiaoguo and Zhao, Bowen and Yang, Guomin and Xiang, Tao and Weng, Jian and Deng, Robert H.},
+  title = {A Survey of Secure Computation Using Trusted Execution Environments},
+  journal = {CoRR},
+  volume = {abs/2302.12150},
+  year = {2023}
+}
+
+@article{turn0search6,
+  title = {A Comprehensive Analysis of Trusted Execution Environments},
+  author = {Ekberg, Jan‑Erik and Kostiainen, Kari and Asokan, N.},
+  journal = {Computing Science––Research and Practice},
+  year = {2014}
+}
+
+@article{turn0academia17,
+  author = {Coppolino, Luigi and D'Antonio, Salvatore and Iasio, Davide and Mazzeo, Giovanni and Romano, Luigi},
+  title = {An Experimental Evaluation of TEE Technology Evolution: Benchmarking Transparent Approaches Based on SGX, SEV, and TDX},
+  journal = {arXiv preprint arXiv:2408.00443},
+  year = {2024}
+}
+
+@misc{turn0search0,
+  title = {TS‑Perf: General Performance Measurement of Trusted Execution Environment and Rich Execution Environment on Intel SGX, ARM TrustZone, and RISC‑V Keystone},
+  howpublished = {IEEE Xplore},
+  note = {2025}
+}
+
+@article{turn0search5,
+  author = {Akram, Ayaz and Giannakou, Anna and Akella, Venkatesh and Lowe‑Power, Jason and Peisert, Sean},
+  title = {SoK: Understanding Design Choices and Pitfalls of Trusted Execution Environments},
+  journal = {Proceedings of the Security and Privacy Workshops (SPW)},
+  year = {2023}
+}
+
+@article{turn0search8,
+  author = {Suzaki, Kuníyasu and Nakajima, Kenta and Oi, Tsukasa and Tsukamoto, Akira},
+  title = {TS‑Perf: General Performance Measurement of Trusted Execution Environment and Rich Execution Environment on Intel SGX, Arm TrustZone, and RISC‑V Keystone},
+  journal = {IEEE Access},
+  volume = {9},
+  pages = {133520--133530},
+  year = {2021},
+  doi = {10.1109/ACCESS.2021.3112202}
+}
+
+@article{turn0search2_coppolino,
+  author = {Coppolino, Luigi and D'Antonio, Salvatore and Iasio, Davide and Mazzeo, Giovanni and Romano, Luigi},
+  title = {An Experimental Evaluation of TEE Technology Evolution: Benchmarking Transparent Approaches Based on SGX, SEV, and TDX},
+  journal = {arXiv preprint arXiv:2408.00443},
+  year = {2024}
+}
+
+@incollection{turn0search9,
+  author = {Ménétrey, Pierre and others},
+  title = {An Exploratory Study of Attestation Mechanisms for Trusted Execution Environments},
+  booktitle = {Academic Survey of TEEs},
+  year = {2023},
+  note = {Includes comparison table of SGX, TrustZone, SEV-SNP, Keystone, and others listing encryption, integrity, attestation features}
+}
