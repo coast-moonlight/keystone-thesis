@@ -1,4 +1,4 @@
-\chapter{Background}
+\chapter{Background and Related Technologies}
 \label{chap:background}
 
 The Keystone framework is founded on the RISC-V instruction set architecture (ISA), which provides a compelling platform for secure system design due to its open specification and extensible modularity~\cite{lee2019keystone,dayeol2019keystone}. Unlike traditional ISAs governed by proprietary vendors, RISC-V fosters a collaborative ecosystem that supports community-driven enhancements and custom extensions. This openness uniquely positions RISC-V as a prime candidate for trusted computing research and development~\cite{Survey2023}. Furthermore, its well-defined privilege model facilitates the construction of robust isolation mechanisms, which are essential for implementing Trusted Execution Environments (TEEs).\footnote{For an in-depth exposition of RISC-V privilege modes and PMP, see the RISC-V Privilege Specification v1.10~\cite{keystone2025how}.}
@@ -28,7 +28,7 @@ In contrast, open-source TEE frameworks such as Keystone have emerged to address
 By integrating privilege separation, hardware-enforced memory protections, and modular TCB design, TEEs provide a powerful framework for secure computation within adversarial environments. Keystone extends these foundational principles with openness and configurability, offering a valuable platform for both academic research and practical deployments of trusted computing technologies~\cite{suzaki2021tsperf}.
 
 
-\section{Keystone Architecture Overview}
+\section{Keystone Enclave Architecture}
 
 Keystone is an open-source Trusted Execution Environment (TEE) framework built on the RISC-V architecture, designed to enable customizable, lightweight, and secure enclaves suitable for both research and deployment in resource-constrained or security-critical settings \cite{dayeol2019keystone}. The framework’s modular design emphasizes a minimal Trusted Computing Base (TCB), portability across diverse RISC-V platforms, and extensibility to accommodate advanced security features, reflecting a clean and flexible architectural philosophy.
 
@@ -57,7 +57,9 @@ The enclave lifecycle is structured into three primary phases: creation, executi
 Keystone’s modular and open framework leverages the openness of RISC-V to provide strong security guarantees while enabling flexibility for research and customization. Its minimal TCB, modular layering (Security Monitor, runtime, eapp), and standards-compliant interfaces make it an attractive platform for developing and evaluating secure applications on modern processors \cite{dayeol2019keystone}. 
 To support secure communication and attestation, Keystone enclaves can integrate modern cryptographic primitives, including emerging post-quantum schemes such as Kyber.
 
-\section{Kyber: A Post-Quantum Cryptography Algorithm}
+\section{Physical Memory Protection (PMP) in RISC-V}
+
+\section{Post-Quantum Cryptography: Kyber Algorithm}
 \label{sec:kyber}
 
 Kyber is a post-quantum key encapsulation mechanism (KEM) designed to resist attacks from both classical and quantum adversaries. Its security is based on the hardness of the Module Learning With Errors (Module-LWE) problem, a structured lattice problem considered intractable even for quantum computers. Kyber is one of the finalists in the NIST Post-Quantum Cryptography (PQC) competition and has been selected for standardization due to its strong security and performance characteristics \cite{kyber2024}.  % [SOURCE1]
@@ -140,7 +142,7 @@ Due to its efficient structure and compact representation, Kyber has been adopte
 These deployments demonstrate Kyber’s readiness for practical applications in secure communications, data protection, and cryptographic protocols. 
 The integration of Kyber into TEE frameworks like Keystone is increasingly relevant as systems must remain secure even in the presence of quantum-capable adversaries. TEEs benefit from Kyber’s compact keys and efficient operations, making it a strong candidate for enclave-based key exchange and attestation.
 
-\section{Comparison with Other TEEs}
+\section{Comparative Overview of TEE}
 \label{sec:comparison_tees}
 
 Keystone distinguishes itself from commercial Trusted Execution Environments—such as Intel SGX, ARM TrustZone, and AMD SEV—through its unique design choices, combining openness, modularity, and deep alignment with the RISC‑V ecosystem.
@@ -158,7 +160,7 @@ Feature-wise, trusted computing surveys place Keystone in a distinct category: u
 For these reasons, Keystone represents a promising alternative to closed-source TEEs, especially in academic and experimental contexts.
 
 
-\section{Performance Considerations in TEEs}
+\section{Performance Challenges in Secure Execution}
 
 Trusted Execution Environments (TEEs) introduce strong isolation guarantees that are essential for secure computation, but these guarantees often come at the cost of non-negligible performance overheads. This performance degradation arises from several sources, including architectural constraints, software abstraction layers, and platform-specific implementation trade-offs. Understanding these performance characteristics is crucial to evaluating the practical deployment of TEEs, especially in scenarios requiring low latency or high throughput.
 

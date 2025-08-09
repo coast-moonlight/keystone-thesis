@@ -1,64 +1,48 @@
-\chapter{Benchmarking Evaluation}
+\chapter{Benchmarking Results and Observations}
 \label{chap:benchmarking}
 
-This chapter presents an in-depth performance evaluation of the selected workloads executed within the Keystone enclave framework. The overarching goal is to characterize the performance implications of running applications in a trusted execution environment (TEE) and to understand how architectural and system-level parameters influence workload behavior under secure isolation.
+This chapter provides a detailed empirical performance evaluation of a set of benchmark workloads executed within the Keystone enclave framework. The primary objective is to quantitatively assess the overheads and limitations introduced by enclave-based execution, focusing on how system-level parameters and hardware constraints influence workload behavior under trusted execution.
 
-The evaluation methodology is grounded in a systematic benchmarking approach, leveraging a combination of synthetic and real-world representative workloads to capture a broad spectrum of computational patterns and security requirements. Specifically, the benchmarks employed include Dhrystone and CoreMark, which provide standardized measures of integer performance and embedded system efficiency, as well as Kyber, a lattice-based post-quantum cryptographic primitive relevant to emerging security paradigms. By encompassing both general-purpose and cryptographic workloads, this evaluation captures diverse execution profiles and resource demands common in enclave deployments.
+The evaluation covers a mix of general-purpose and cryptographic workloads. Specifically, we utilize the Dhrystone and CoreMark benchmarks, which are standard tools for measuring integer processing performance and embedded system efficiency, respectively. Additionally, the Kyber post-quantum cryptographic algorithm is included to evaluate a compute-intensive, security-critical workload relevant for future-proof cryptographic applications. This combination allows us to characterize enclave performance across a spectrum of computational patterns and resource demands.
 
-Central to this study is the investigation of how varying hardware and system configurations—such as memory capacity, number of CPU cores, and execution mode (sequential versus parallel)—affect enclave performance. These parameters are systematically varied across a curated set of representative configurations, each selected to reflect practical deployment scenarios ranging from resource-constrained embedded devices to more powerful multi-core systems. This controlled variation enables the isolation of specific factors influencing performance, thereby facilitating a nuanced understanding of the trade-offs inherent in enclave execution.
+\section{Baseline: Native (Non-Enclave) Performance}
 
-Performance metrics are collected at multiple levels, including execution time, throughput, cache behavior, and system-level events such as context switches and page faults. Execution times are measured both inside the enclave and in native environments to quantify the overhead imposed by enclave isolation. Cache activity is monitored through QEMU’s cache modeling plugin, providing insight into memory subsystem interactions, though it is important to note that the plugin captures system-wide activity rather than enclave-specific cache events. Additional system metrics are gathered to assess the impact of enclave operation on overall system behavior and stability.
+To establish a baseline for evaluating enclave overheads, we first executed all benchmarks natively on the simulated RISC-V platform without any enclave isolation. This phase allows us to measure the raw performance characteristics of the system and isolate the costs introduced solely by secure execution.
 
-The chapter proceeds by presenting detailed results for each benchmark, analyzing the influence of the experimental parameters on performance outcomes. Key aspects such as scaling efficiency, memory sensitivity, and parallelization effects are explored, with a focus on interpreting the practical implications of observed performance patterns. Particular attention is given to the enclave overhead, examining how it varies across workloads and configurations to identify potential bottlenecks and optimization opportunities.
+The Dhrystone and CoreMark benchmarks exhibited expected scaling behavior with respect to CPU cores and memory size. As CPU core count increased, throughput for these parallelizable benchmarks improved approximately linearly, reflecting efficient multi-threaded execution on the underlying hardware. Memory size impacted CoreMark more noticeably, particularly during memory-intensive phases, where increased memory reduced paging and improved cache hit rates. In contrast, Dhrystone’s smaller working set resulted in negligible sensitivity to memory size variations.
 
-Through this rigorous and comprehensive benchmarking evaluation, the chapter aims to provide a solid empirical foundation for assessing the viability and efficiency of the Keystone enclave framework. The insights gained contribute to the broader discourse on trusted execution environments, informing both future system design and application deployment strategies that seek to balance security assurances with performance requirements.
+The Kyber cryptographic benchmark behaved differently. Due to its inherently sequential algorithmic structure, Kyber’s execution time remained relatively constant across changes in CPU core count. Likewise, memory size had minimal impact on Kyber performance, as its working set comfortably fit within allocated memory without inducing paging.
 
+These native baseline results confirm the stability and predictability of the simulated system environment, providing a solid foundation for subsequent enclave overhead analysis.
 
-\section{Native Execution Performance}
-The native execution phase establishes a performance baseline by running the benchmark workloads directly on the simulated RISC-V platform without any enclave isolation. This baseline is critical for contextualizing the costs introduced by secure execution environments.
+\section{Enclave Execution Results and Overheads}
 
-The Dhrystone and CoreMark benchmarks, widely used to assess general-purpose processor performance, exhibited clear scaling trends in accordance with the underlying hardware configurations. As expected, increasing the number of CPU cores resulted in nearly linear improvements in throughput for parallel workloads, reflecting efficient multi-threading capabilities in the baseline system. Memory size influenced performance primarily in memory-intensive phases of CoreMark but had minimal effect on Dhrystone due to its relatively small working set.
+Execution within Keystone enclaves introduces overhead from multiple sources: memory isolation enforced by PMP, additional context switches to manage transitions between secure and non-secure execution states, and the general overhead of enforcing enclave boundaries at runtime.
 
-Kyber, a cryptographic workload, showed consistent execution times across varying memory sizes, corroborating its CPU-bound nature. Since Kyber does not exploit parallelism, increases in core count had negligible impact on its throughput during native runs.
+Across all benchmarks, enclave execution resulted in increased execution times compared to native runs. Overhead magnitude varied by workload and system configuration but generally remained below 15\%. For parallel workloads such as CoreMark, overhead tended to increase with the number of CPU cores, likely due to increased synchronization demands and frequent enclave exit and re-entry operations during thread management. Dhrystone showed more modest overhead growth with core scaling.
 
-These results confirm that the system model behaves predictably and provides a stable foundation against which enclave overheads can be measured.
+Cache behavior, measured indirectly via QEMU’s cache modeling plugin, indicated modest increases in cache miss rates during enclave execution. Although this plugin provides system-wide cache metrics rather than enclave-specific data, the observed increases likely stem from PMP-related overheads such as cache flushing or restricted memory access patterns. These overheads are an expected consequence of maintaining strong memory isolation guarantees.
 
-\section{Enclave Execution Performance}
-Enclave execution introduces overhead due to additional security mechanisms, including isolated memory regions, secure context switching, and enforced memory protection. The Keystone framework provides a lightweight trusted execution environment that minimizes these costs but does not eliminate them entirely.
+A critical observation during enclave execution was the enforcement and limitation of PMP resources. The fixed PMP register count on the QEMU virt platform fundamentally restricts the number of enclaves that can be concurrently instantiated. When the number of requested enclaves exceeds the 16 PMP entries, enclave creation fails. These failures are characterized by SBI call error codes and logged kernel errors indicating that no PMP registers are available. This limitation underscores the importance of considering PMP capacity in enclave orchestration and resource allocation.
 
-Across all benchmarks, enclave execution incurred a measurable increase in execution time relative to native runs. The magnitude of this overhead varied by workload and system configuration but generally remained under 15\%. For multi-threaded benchmarks such as CoreMark, the overhead tended to increase slightly with core count, potentially reflecting synchronization and enclave exit/re-entry costs during thread management.
+\section{Workload Sensitivity Analysis (Kyber vs CoreMark vs Dhrystone)}
 
-Context switch analysis revealed that enclaves generated more frequent transitions between secure and non-secure worlds, contributing to latency. Cache behavior, as inferred from the QEMU plugin, showed modest increases in miss rates during enclave runs, which may be attributable to memory protection overheads or cache flushing mechanisms.
+The Kyber post-quantum cryptographic algorithm is a representative workload for evaluating the performance impact of enclave execution on security-critical applications. Kyber consists of three primary operations—key generation, encapsulation, and decapsulation—each profiled extensively within enclaves using the Keystone timer API to capture precise cycle counts.
 
-Importantly, despite these overheads, the Keystone framework sustained reasonable performance, demonstrating its suitability for deploying secure workloads with acceptable trade-offs in embedded and resource-constrained environments.
+Execution within enclaves increased Kyber’s runtime by approximately 7–9\% compared to native execution. This overhead is modest given the cryptographic operations’ complexity and the security benefits provided by enclaves.
 
-\section{Kyber Algorithm in the Enclave: Performance Impact}
-Kyber’s role as a post-quantum cryptographic primitive makes it a critical candidate for enclave deployment, especially given increasing emphasis on quantum-resistant security.
+As with native execution, Kyber performance was insensitive to increases in CPU core count due to its inherently sequential design. Memory usage during enclave execution remained stable, with no indications of paging or contention. System-wide cache miss rates observed through QEMU remained consistent with Kyber’s memory access patterns, including phases dominated by number-theoretic transforms and polynomial arithmetic.
 
-The Kyber benchmark suite was executed inside enclaves using the Keystone timer API to capture fine-grained cycle counts for key operations: key generation, encapsulation, and decapsulation. Each operation was profiled across multiple runs and system configurations, ensuring statistical robustness.
+From a resource perspective, the requirement of one PMP entry per enclave constrains the number of parallel Kyber instances that can be simultaneously deployed. This constraint must be taken into account when designing systems requiring multiple isolated cryptographic operations.
 
-Results show Kyber’s execution time within enclaves increased by roughly 7–9\% compared to native runs, a modest overhead considering the security guarantees afforded. The sequential nature of Kyber’s operations meant that scaling CPU cores had no meaningful effect on performance, aligning with the cryptographic algorithm’s inherently serial structure.
+\section{Impact of Hardware Parameters (Cores, Memory, Cache)}
 
-Memory profiling indicated stable usage patterns without signs of excessive contention or paging. Cache activity observed system-wide through the QEMU plugin showed moderate miss rates consistent with Kyber’s working set size and algorithmic phases involving number-theoretic transforms and polynomial multiplications.
+To comprehensively assess how hardware configurations affect enclave performance, we systematically varied CPU core counts, memory allocations, and cache configurations.
 
-Overall, the findings suggest that Keystone enclaves can efficiently host compute-intensive cryptographic workloads like Kyber without prohibitive performance penalties, thereby supporting their adoption in secure embedded applications.
+Scaling the number of CPU cores yielded anticipated improvements for parallel workloads, with throughput gains plateauing beyond six cores due to synchronization overhead and increased enclave management complexity. Sequential workloads such as Kyber remained unaffected by core scaling.
 
-\section{Performance Parameters: CPU Cores, Memory Allocation, Cache Size}
-To isolate the effects of architectural parameters on workload performance, a systematic variation of CPU core counts, memory sizes, and cache configurations was performed.
+Memory allocation experiments revealed that increasing memory size from 64MB to 2GB improved performance for memory-intensive benchmarks by reducing paging and increasing cache hit rates. However, beyond approximately 512MB, gains diminished, indicating sufficient memory provision for the workload’s working set.
 
-CPU core scaling experiments demonstrated expected improvements for parallel workloads, with diminishing returns appearing beyond six cores due to synchronization overhead and resource contention in enclave mode. Sequential workloads such as Kyber remained unaffected by core count variations.
+Cache configuration impacts were evaluated using the QEMU cache modeling plugin. Larger cache sizes and higher associativity reduced miss rates, particularly for instruction-heavy workloads like Dhrystone. While the plugin’s system-wide scope limits insights into enclave-specific cache activity, the trends suggest that cache tuning can meaningfully influence enclave performance.
 
-Memory size increases from 64MB up to 2GB yielded proportional performance gains in memory-demanding workloads, primarily by reducing paging and improving cache hit rates. However, beyond 512MB, gains plateaued, indicating that memory was no longer a bottleneck.
-
-Cache configuration experiments, using the QEMU cache modeling plugin, indicated that larger cache sizes and more associative eviction policies reduced miss rates, particularly in instruction-heavy workloads like Dhrystone. While the plugin provides system-wide cache metrics rather than enclave-specific data, trends suggest that cache tuning can contribute to enclave performance improvements, especially in workloads sensitive to instruction fetch latencies.
-
-Together, these parameter analyses provide valuable guidance for tailoring system configurations to balance resource usage and performance in enclave deployments.
-\section{Benchmarking Results: Native vs Enclave Execution}
-%\section{Performance Bottlenecks and Overheads in Enclave Execution}
-The comparative analysis consolidates the observed performance metrics across native and enclave runs, offering insights into the costs and trade-offs of trusted execution.
-
-Normalized overhead values, expressed as percentage increases in execution time relative to native baselines, reveal that enclave execution introduces modest but non-negligible penalties. CoreMark and Dhrystone incurred average overheads ranging from 5\% in low-resource configurations up to 14\% in high-core-count setups. Kyber’s overhead remained more consistent around 8\%, reflecting its computational profile.
-
-Graphs illustrating throughput versus core count and memory size highlight that enclave overhead grows with system complexity, but the overall performance degradation remains manageable. This suggests that Keystone’s design successfully balances security isolation with execution efficiency.
-
-The results emphasize that enclave deployment is feasible for both general-purpose and cryptographic workloads, provided that system configurations are carefully selected and performance expectations are aligned with the inherent costs of secure execution.
+Importantly, the relationship between memory allocation and PMP usage is nuanced. Larger enclave memory regions may require multiple PMP entries if the memory cannot be described contiguously in a single PMP register, effectively reducing the total number of enclaves supported simultaneously. This interaction between memory layout and PMP capacity represents a critical consideration for enclave deployment strategies.

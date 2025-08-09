@@ -1,4 +1,4 @@
-\chapter{System Architecture and Design}
+\chapter{System Design and Methodology}
 \label{chap:methodology}
 
 The primary objective of this thesis is to evaluate the performance impact of Keystone’s enclave isolation mechanisms on representative embedded and systems-level workloads. Specifically, the study aims to quantify the computational overhead introduced by executing applications within a Keystone enclave, compared to their execution in a traditional, non-isolated environment. To this end, a series of controlled experiments were conducted on a virtualized RISC-V platform based on QEMU.
@@ -18,7 +18,7 @@ Each benchmark configuration was executed multiple times (typically ten iteratio
 
 This methodology facilitates a detailed understanding of how Keystone’s architectural design and isolation primitives influence runtime performance. The controlled and repeatable test environment, combined with standardized benchmarking tools and consistent measurement practices, ensures that the results are both reliable and meaningful. Ultimately, the findings offer valuable insights into the trade-offs between security and efficiency in open-source TEE frameworks and inform future efforts in trusted system design.
 
-\section{Experimental Setup}
+\section{Experimental Platform and Environment}
 \label{sec:experimental-setup}
 
 The experimental setup was designed to enable reliable, repeatable evaluation of the Keystone Trusted Execution Environment (TEE) without requiring physical RISC-V hardware. To achieve this, a virtualized testbed was constructed using a RISC-V-specific fork of the QEMU emulator running on an Ubuntu 22.04 LTS host system. This emulated environment provides fine-grained control over system configuration, facilitating flexible testing of Keystone enclaves while accurately modeling a real RISC-V platform.
@@ -76,7 +76,7 @@ QEMU’s built-in GDB server provides visibility into registers, memory, and exc
 
 Overall, this integrated virtualized environment and build system provide a flexible, controlled platform for detailed evaluation of Keystone’s performance and security properties. The modular Makefile-driven workflow streamlines configuration, deployment, and debugging, enabling efficient development and benchmarking without dependence on physical hardware. %Further technical details on build dependencies and configuration options are documented in the \textbf{Appendix}.
 
-\section{Kyber in the Enclave}
+\section{Integration of Kyber into Keystone}
 \label{sec:kyber-enclave}
 
 To comprehensively evaluate the performance characteristics of cryptographic workloads within a trusted execution environment, this study incorporates the Kyber key encapsulation mechanism (KEM), a lattice-based post-quantum cryptographic primitive. Kyber has garnered significant attention as a leading candidate in the NIST post-quantum cryptography standardization process, offering a robust balance of security, performance, and suitability for deployment on resource-constrained devices. Its integration within a secure enclave environment highlights the practical implications of deploying advanced cryptographic primitives where hardware-based isolation is critical for protecting sensitive operations and data.
@@ -107,7 +107,7 @@ Kyber’s inclusion in the benchmark suite extends the evaluation beyond traditi
 Kyber serves as a representative case study for secure, non-parallelizable cryptographic workloads executed within enclave boundaries. Its performance characteristics complement those observed in more generic benchmarks by illuminating the interplay between cryptographic computation, enclave isolation overhead, and system resource scaling. This comprehensive evaluation underpins recommendations for enclave provisioning and optimization in future secure computing platforms.
 
 
-\section{Benchmarking tools and metrics}
+\section{Benchmarking Suite and Metrics}
 \label{sec:benchmarking-tools}
 
 To evaluate the performance impact of the Keystone Trusted Execution Environment (TEE) comprehensively, this study employs two well-established synthetic benchmarks: \textit{Dhrystone} and \textit{CoreMark}. Both are widely used in the embedded systems community and are well-supported in the RISC-V ecosystem, making them natural choices to assess Keystone’s behavior in secure versus non-secure execution modes. These benchmarks capture a broad spectrum of processor activities relevant to enclave execution—such as integer arithmetic, control flow, and memory access patterns.
@@ -128,7 +128,7 @@ Both Dhrystone~\cite{weiss2002dhrystone} and CoreMark~\cite{gal2012exploring} ar
 
 By combining these two benchmarks with detailed timing and variability analysis, this study provides a well-rounded and nuanced understanding of the trade-offs involved in securing execution via Keystone enclaves on RISC-V platforms.
 
-\section{Parameter Variation Strategy}
+\section{Parameter Configuration and Variation}
 \label{sec:param-variation}
 
 To investigate the architectural impact on enclave execution, this study systematically varied system parameters including memory size, core count, execution mode (sequential vs parallel), and cache configurations using QEMU’s cache modeling capabilities. The aim was to understand how these factors influence the behavior of trusted and non-trusted workloads under different resource constraints.
@@ -163,7 +163,7 @@ Across all system configurations, three cache profiles were tested: a baseline s
 
 Benchmarks were run in both native and enclave execution modes to enable direct comparisons. This design facilitated the isolation of architectural performance trends and the specific overhead introduced by trusted execution.
 
-\section{Data Collection and Analysis Procedures}
+\section{Data Collection and Reproducibility}
 \label{sec:data-collection}
 
 All benchmarks were executed within a consistent virtualized RISC-V environment using QEMU. For each selected configuration, both Dhrystone and CoreMark benchmarks were run in native and enclave modes to capture the impact of enclave isolation under different resource and cache conditions.
