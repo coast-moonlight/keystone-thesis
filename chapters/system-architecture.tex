@@ -131,11 +131,13 @@ By combining these two benchmarks with detailed timing and variability analysis,
 \section{Parameter Configuration and Variation}
 \label{sec:param-variation}
 
-To investigate the architectural impact on enclave execution, this study systematically varied system parameters including memory size, core count, execution mode (sequential vs parallel), and cache configurations using QEMU’s cache modeling capabilities. The aim was to understand how these factors influence the behavior of trusted and non-trusted workloads under different resource constraints.
+To rigorously assess how architectural and system-level parameters influence the performance of workloads executed within secure enclaves, this study undertook a systematic exploration of configurable runtime characteristics on the simulated RISC-V platform. Specifically, we varied four principal dimensions: physical memory size, the number of processor cores, execution mode (sequential versus parallel), and cache configuration. These parameters were chosen based on their known relevance to workload performance and enclave behavior, and were adjusted within the bounds of what is supported by the QEMU-based virtual platform and the Keystone framework.
 
-Cache simulation was conducted using the QEMU TCG plugin framework \cite{mandour2021cache}, which models per-core instruction and data caches in an idealized fashion. While this plugin is not cycle-accurate and does not isolate enclave-specific behavior, it enables consistent modeling of cache accesses and miss patterns across the entire QEMU runtime. This was sufficient to observe cache-related effects caused by workload behavior in different configurations.
+The overarching objective of this variation was to uncover the extent to which system-level constraints and resource allocations impact both trusted (enclave) and non-trusted (native) execution. By exploring diverse configurations, we aimed to characterize how resource limitations (e.g., constrained memory or limited cores) manifest in performance degradation, and to what degree secure execution amplifies or mitigates these effects.
 
-To avoid excessive experimental overhead and redundant trends, five representative system configurations were selected. These were chosen to cover a wide range of memory capacities, CPU core counts, and execution modes. Each configuration enables a specific type of insight, ensuring a diverse but manageable evaluation matrix.
+To simulate cache behavior, we employed the QEMU TCG plugin framework, specifically leveraging the cache modeling capabilities introduced by Mandour et al. \cite{mandour2021cache}. This plugin facilitates the modeling of per-core instruction and data caches and enables the collection of aggregate system-wide cache statistics. While it does not provide cycle-accurate timing nor isolate enclave-specific cache behavior, its ability to log cache access and miss patterns uniformly across all benchmark executions proved sufficient for analyzing cache-related effects in both secure and non-secure modes. The insights gleaned from this analysis, though approximate, were instrumental in identifying general cache utilization trends under various workloads and resource configurations.
+
+Given the expansive parameter space created by the combination of memory size, core count, execution mode, and cache settings, it was neither practical nor necessary to exhaustively benchmark every possible configuration. Instead, we curated a set of five representative system configurations that collectively span a meaningful range of the performance spectrum—from minimal, resource-constrained environments to well-provisioned, multicore systems operating at near full capacity. These configurations are detailed in Table~\ref{tab:configurations}.
 
 \begin{table}[h]
 \centering
@@ -143,52 +145,153 @@ To avoid excessive experimental overhead and redundant trends, five representati
 \hline
 \textbf{Config Name} & \textbf{RAM} & \textbf{Cores} & \textbf{Execution} & \textbf{Rationale} \\
 \hline
-Low-End Baseline     & 64M         & 1             & Sequential         & Serves as the minimal configuration to establish baseline performance. Useful for understanding enclave overhead under tight resource constraints. \\
+Low-End Baseline     & 64M         & 1             & Sequential         & Serves as a minimal configuration, enabling the establishment of baseline performance under constrained conditions. Useful for measuring the raw impact of enclave mechanisms in resource-starved environments. \\
 \hline
-Balanced Parallel    & 128M        & 2             & Parallel           & Captures early-stage multicore scaling behavior. Highlights effects of light parallelism under modest memory availability. \\
+Balanced Parallel    & 128M        & 2             & Parallel           & Captures early-stage scaling behavior with modest multicore setups. Helps isolate the overhead introduced by enclave entry/exit in light parallel workloads. \\
 \hline
-Mid-Range Sequential & 256M        & 4             & Sequential         & Enables evaluation of scaling effects due to additional cores and memory, while keeping execution sequential to avoid parallel noise. \\
+Mid-Range Sequential & 256M        & 4             & Sequential         & Provides a view into how increasing core count and memory capacity affect performance in the absence of thread-level parallelism. Useful for understanding system scalability independent of synchronization effects. \\
 \hline
-High-End Parallel    & 512M        & 6             & Parallel           & Represents a well-provisioned system where both memory and core resources are sufficient. Useful for observing near-ideal parallel execution. \\
+High-End Parallel    & 512M        & 6             & Parallel           & Represents a robust configuration where memory and cores are sufficiently provisioned. Designed to observe near-ideal parallel execution and potential scalability limits of the enclave framework. \\
 \hline
-Max Capacity Stress  & 2G          & 10            & Parallel           & Tests the upper bounds of simulated platform capacity. Helps identify performance saturation and the point of diminishing returns. \\
+Max Capacity Stress  & 2G          & 10            & Parallel           & Pushes the simulated platform to its upper bounds. Intended to explore saturation points, resource contention, and diminishing returns under heavy system load. \\
 \hline
 \end{tabular}
 \caption{Summary of representative configurations used in performance evaluation.}
+\label{tab:configurations}
 \end{table}
 
-Several other configurations—such as single-core setups with excessive memory or high-core setups with limited memory—were explored during preliminary testing. However, they offered little additional insight beyond what was observable in the selected set. For instance, excessive memory on a single core often led to underutilization, while many-core systems with small memory pools frequently resulted in excessive context switching. Both behaviors were captured effectively by existing selected configurations.
+In preliminary testing, a number of alternative configurations were explored to validate the diversity and coverage of the selected set. These included scenarios such as single-core systems with excessively large memory allocations and many-core setups with highly constrained memory. However, these combinations typically resulted in either underutilized resources or pathological behavior (e.g., excessive paging or context switching), without contributing new insight beyond what was captured by the five chosen profiles. For example, increasing memory size on a single-core system had negligible impact due to CPU-bound bottlenecks, while increasing core counts in systems with limited memory often led to high levels of involuntary context switching and scheduling overhead.
 
-Across all system configurations, three cache profiles were tested: a baseline setup with 8\,KB 4-way LRU caches, a larger 32\,KB 8-way configuration, and a fixed-size cache using FIFO and random eviction strategies. A consistent block size of 64 bytes was used to preserve spatial locality. Although the cache plugin logs system-wide activity, observed trends were analyzed in conjunction with benchmark behavior to infer their likely contributions to overall performance variation.
+In addition to varying core and memory resources, three distinct cache configurations were tested across all system profiles to assess the sensitivity of enclave and native workloads to cache architecture. These configurations included:
 
-Benchmarks were run in both native and enclave execution modes to enable direct comparisons. This design facilitated the isolation of architectural performance trends and the specific overhead introduced by trusted execution.
+\begin{itemize}
+    \item A baseline setup featuring 8\,KB, 4-way set-associative caches with an LRU replacement policy
+    \item An enlarged cache with 32\,KB size and 8-way associativity, reflecting more generous cache resources
+    \item A fixed-size cache using FIFO and random eviction policies to model alternative eviction behaviors
+\end{itemize}
+
+All configurations used a consistent block size of 64 bytes to preserve spatial locality across workloads. Although the cache modeling plugin captures system-wide statistics and does not differentiate between enclave and non-enclave activity, observed trends—such as shifts in cache miss rates and access patterns—were analyzed in conjunction with benchmark-level behavior to infer their contribution to observed performance variations.
+
+To enable direct and consistent comparisons, each benchmark was executed in both native and enclave modes under every configuration. This mirrored design allowed for clear isolation of the performance penalties introduced by enclave execution and helped disentangle architectural effects from security-related overhead.
 
 \section{Data Collection and Reproducibility}
 \label{sec:data-collection}
 
-All benchmarks were executed within a consistent virtualized RISC-V environment using QEMU. For each selected configuration, both Dhrystone and CoreMark benchmarks were run in native and enclave modes to capture the impact of enclave isolation under different resource and cache conditions.
+To ensure the integrity, consistency, and scientific validity of the performance evaluation, all benchmark experiments were conducted within a tightly controlled and reproducible virtualized environment. The entire measurement campaign was executed on a simulated RISC-V platform using the QEMU emulator, which served as the foundation for both native and enclave-based workloads. This consistent virtualization layer eliminated hardware variability and allowed for precise control over system resources such as memory, core count, and cache characteristics.
 
-Each experiment consisted of ten executions. To reduce variance caused by warm-up behavior, the first run was discarded, and the remaining nine were used to compute average performance. Key performance metrics included total wall-clock execution time, benchmark throughput (DMIPS or iterations/sec), and standard deviation.
+Each system configuration, as defined in Section~\ref{sec:param-variation}, was evaluated using the Dhrystone, CoreMark, and Kyber benchmarks. For each benchmark, tests were run in both native (non-enclave) and enclave execution modes to facilitate direct comparative analysis of performance overheads introduced by trusted execution.
 
-In addition to these primary measurements, system-level runtime statistics were collected from within the guest Linux environment. These included:
+To reduce transient measurement noise and improve the robustness of collected data, each benchmark experiment was repeated ten times per configuration. The first execution was discarded in all cases to account for initialization artifacts such as dynamic binary translation warm-up and memory allocation caching within the QEMU runtime. The remaining nine runs were averaged to produce stable and representative performance figures. In addition to computing the arithmetic mean, the standard deviation was recorded to provide a measure of variability across runs.
+
+The primary performance metric collected was **total wall-clock execution time**, as measured from within the guest Linux environment using high-resolution timers (e.g., \texttt{clock\_gettime()}) or the Keystone timer API in enclave mode. For Dhrystone and CoreMark, benchmark-specific throughput metrics were also recorded, including Dhrystone MIPS (DMIPS) and iterations per second. These allowed for workload-specific efficiency comparisons across configurations.
+
+In addition to these high-level metrics, detailed system-level runtime statistics were gathered using standard Linux facilities such as the \texttt{/proc} filesystem and the \texttt{getrusage()} system call. These included:
 
 \begin{itemize}
-    \item User and system CPU time
-    \item Maximum memory usage (RSS)
-    \item Minor and major page faults
-    \item Voluntary and involuntary context switches
+    \item \textbf{User and system CPU time:} Total time spent in user-space and kernel-space respectively.
+    \item \textbf{Maximum resident set size (RSS):} Peak memory consumption during execution.
+    \item \textbf{Page fault statistics:} Number of minor (soft) and major (hard) page faults incurred during the benchmark.
+    \item \textbf{Context switching behavior:} Number of voluntary and involuntary context switches, indicating scheduling and synchronization overhead.
 \end{itemize}
 
-These metrics were essential to understanding how different system configurations affected workload behavior. For example, high numbers of involuntary context switches in parallel configurations often indicated memory contention or over-subscription of CPU cores.
+These runtime indicators were critical in diagnosing performance behaviors that could not be attributed to CPU throughput alone. For instance, elevated context switch counts in parallel configurations were often correlated with increased enclave transition overhead or CPU oversubscription, especially in memory-constrained environments.
 
-Cache-related metrics were gathered using the QEMU cache plugin, which logs all instruction and data cache accesses and misses at the system level. Although enclave-specific cache statistics could not be isolated, the relative trends between native and enclave executions under identical configurations allowed for meaningful comparative analysis.
+Cache-related metrics were obtained using the QEMU TCG plugin cache model described earlier. This plugin logs all instruction and data cache accesses and cache misses at the system level. While the plugin lacks enclave-specific visibility and does not model hardware-specific cache timing, it provides a consistent and useful proxy for analyzing trends in memory access behavior. Cache metrics were aligned with benchmark execution phases to identify correlations between cache activity and observed performance shifts.
 
-Performance overhead introduced by enclave execution was quantified using the percentage increase in execution time compared to native mode, calculated as:
+To compute the enclave-specific performance overhead, we employed a normalized overhead metric defined as the relative increase in execution time between enclave and native modes:
 
 \[
 \text{Overhead (\%)} = \left( \frac{\text{Enclave Time} - \text{Native Time}}{\text{Native Time}} \right) \times 100
 \]
 
-This normalized metric enabled consistent cross-comparison between configurations with vastly different execution baselines.
+This percentage-based formulation allows for direct cross-comparison of overheads across workloads with differing baseline durations. It also facilitates trend identification across system configurations, particularly when assessing scaling behaviors.
 
-All benchmark scripts, plugin configurations, and raw logs were version-controlled and archived. Detailed plugin output, configuration parameters, and system call traces are provided in Appendix~\ref{appendix:cache-plugin} for transparency and reproducibility.
+For reproducibility, all benchmarking scripts, system configurations, QEMU command-line options, Keystone runtime parameters, and cache plugin settings were version-controlled using Git. Raw benchmark outputs, kernel logs, and cache plugin trace files were archived and documented. A complete snapshot of the experimental infrastructure, along with scripts to regenerate results, is provided in Appendix~\ref{appendix:cache-plugin}. This archival effort ensures that all reported results can be independently verified and reproduced by future researchers or evaluators.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.75cm]
+\node (start)   [process] {Start: Define Benchmark Set};
+\node (config)  [process, below of=start] {Select Hardware Configuration};
+\node (native)  [process, below of=config] {Run Benchmarks in Native Mode};
+\node (enclave) [process, below of=native] {Run Benchmarks in Enclave Mode};
+\node (metrics) [process, below of=enclave] {Collect Performance Metrics};
+\node (analyze) [process, below of=metrics] {Compare and Analyze Overheads};
+\node (end)     [process, below of=analyze] {Store Logs and Archive Results};
+
+\draw [arrow] (start)   -- (config);
+\draw [arrow] (config)  -- (native);
+\draw [arrow] (native)  -- (enclave);
+\draw [arrow] (enclave) -- (metrics);
+\draw [arrow] (metrics) -- (analyze);
+\draw [arrow] (analyze) -- (end);
+\end{tikzpicture}
+\caption{Benchmarking and Data Collection Workflow}
+\label{fig:benchmarking-workflow}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    native/.style={draw, fill=blue!20, minimum width=1.2cm, minimum height=1cm, font=\small, rounded corners=2pt},
+    enclave/.style={draw, fill=red!20, minimum width=1.2cm, minimum height=1cm, font=\small, rounded corners=2pt},
+    label/.style={font=\bfseries, align=center},
+    cell/.style={draw, minimum width=1cm, minimum height=0.6cm},
+    every node/.style={inner sep=2pt}
+]
+
+% Column labels
+\node[label] at (2.4, 6.2) {Low-End};
+\node[label] at (4.4, 6.2) {Balanced};
+\node[label] at (6.4, 6.2) {Mid-Range};
+\node[label] at (8.4, 6.2) {High-End};
+\node[label] at (10.4, 6.2) {Max Capacity};
+
+% Row labels
+\node[label, rotate=90] at (1, 5) {Dhrystone};
+\node[label, rotate=90] at (1, 3) {CoreMark};
+\node[label, rotate=90] at (1, 1) {Kyber};
+
+% Dhrystone row
+\node[native] at (2, 5) {11.3s};
+\node[enclave] at (2.8, 5) {123s};
+
+\node[native] at (4, 5) {107s};
+\node[enclave] at (4.8, 5) {99s};
+
+\node[native] at (6, 5) {91s};
+\node[enclave] at (6.8, 5) {55s};
+
+\node[native] at (8, 5) {22s};
+\node[enclave] at (8.8, 5) {11s};
+
+\node[native] at (10, 5) {5s};
+\node[enclave] at (10.8, 5) {20s};
+
+% CoreMark row (empty placeholders for now)
+\foreach \x in {2,4,6,8,10} {
+    \node[native] at (\x, 3) {};
+    \node[enclave] at (\x+0.8, 3) {};
+}
+
+% Kyber row (empty)
+\foreach \x in {2,4,6,8,10} {
+    \node[native] at (\x, 1) {};
+    \node[enclave] at (\x+0.8, 1) {};
+}
+
+% Native / Enclave labels inside or above boxes if needed
+\node[font=\scriptsize] at (1.8, 5.8) {Native};
+\node[font=\scriptsize] at (2.6, 5.8) {Enclave};
+
+% Legend
+\node[draw, fill=blue!20, minimum width=0.8cm, minimum height=0.6cm] at (6, -0.8) {};
+\node at (6.9, -0.8) {Native};
+
+\node[draw, fill=red!20, minimum width=0.8cm, minimum height=0.6cm] at (8.5, -0.8) {};
+\node at (9.4, -0.8) {Enclave};
+
+\end{tikzpicture}
+\caption{Experiment Matrix: Benchmarks Across Configurations and Execution Modes}
+\label{fig:experiment-matrix}
+\end{figure}

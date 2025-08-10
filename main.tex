@@ -3,6 +3,32 @@
 \usepackage{comment}
 \usepackage{float}
 \lstset{basicstyle=\ttfamily}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows.blur}
+
+\tikzstyle{process} = [
+    rectangle, rounded corners,
+    minimum width=4.2cm,
+    minimum height=1.2cm,
+    text centered,
+    draw=black,
+    fill=blue!10,
+    font=\sffamily\small,
+    blur shadow
+]
+
+\tikzstyle{arrow} = [
+    thick,
+    ->,
+    >=Stealth,
+    draw=gray!80
+]
+
+\tikzstyle{cell} = [rectangle, draw=black, minimum width=2.5em, minimum height=2.5em, anchor=center]
+\tikzstyle{native} = [cell, fill=blue!20]
+\tikzstyle{enclave} = [cell, fill=red!20]
+\tikzstyle{label} = [font=\bfseries]
+
 
 \input{preamble.tex} % Put your \UzLStyle and \UzLThesisSetup here
 \addbibresource{refs.bib}
