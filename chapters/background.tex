@@ -58,6 +58,33 @@ Keystone’s modular and open framework leverages the openness of RISC-V to prov
 To support secure communication and attestation, Keystone enclaves can integrate modern cryptographic primitives, including emerging post-quantum schemes such as Kyber.
 
 \section{Physical Memory Protection (PMP) in RISC-V}
+\label{sec:pmp}
+
+Physical Memory Protection (PMP) is a hardware-level security mechanism defined by the RISC-V privileged architecture to provide fine-grained control over access permissions to physical memory regions. PMP plays a central role in enabling secure system software, particularly in contexts where memory isolation between privileged and unprivileged software is essential. It is a critical enabler for implementing secure environments such as hypervisors, operating system kernels, and Trusted Execution Environments (TEEs) without relying on traditional virtualization support~\cite{riscvprivspec}.
+
+In RISC-V, the PMP mechanism is configured exclusively by machine-mode (M-mode) software—the most privileged execution level in the architecture—and applies access control policies to all lower-privileged software running in supervisor (S-mode) or user mode (U-mode). Each PMP entry defines a memory region along with a set of permissions (read, write, execute) and an addressing mode. The hardware enforces these permissions such that any access attempt by S-mode or U-mode software that violates a PMP rule results in a trap to M-mode. This mechanism ensures that M-mode retains full control over physical memory while being able to delegate controlled access to untrusted software layers~\cite{riscvprivspec,lee2019keystone}.
+
+A typical RISC-V core supports a fixed number of PMP entries (commonly 8 or 16), each represented by two Control and Status Registers (CSRs): \texttt{pmpcfg} and \texttt{pmpaddr}. The \texttt{pmpcfg} register specifies the access permissions and address matching mode for each region, while \texttt{pmpaddr} defines the address bounds. RISC-V supports several region encoding modes:
+
+\begin{itemize}
+    \item \textbf{TOR (Top-of-Range):} Defines a region from the base address of the previous PMP entry up to the current address.
+    \item \textbf{NAPOT (Naturally Aligned Power-Of-Two):} Encodes both the base and size in a single register, enabling efficient representation of power-of-two-sized regions.
+    \item \textbf{NA4 (Naturally Aligned 4-byte):} Encodes a minimal 4-byte memory region.
+\end{itemize}
+
+The design of PMP aligns with the minimalist and modular philosophy of RISC-V. Unlike traditional memory protection mechanisms such as x86's segmentation or ARM's TrustZone Address Space Controller (TZASC), PMP is simple, deterministic, and free from microarchitectural complexity. Importantly, PMP operates at the physical memory level—independent of virtual memory or page tables—which makes it highly suitable for systems with limited resources or without Memory Management Units (MMUs)~\cite{riscvprivspec,Survey2023}.
+
+In the context of TEEs such as the Keystone framework, PMP serves as the fundamental enforcement mechanism for enclave isolation. Keystone leverages PMP to assign a protected memory region, known as the Enclave Page Memory (EPM), to each enclave. This region is configured to be inaccessible to both the untrusted operating system (running in S-mode) and any other software outside the enclave context~\cite{dayeol2019keystone}. During enclave creation, the Keystone Security Monitor (SM)—executing in M-mode—programmatically sets PMP entries to lock the memory region associated with the enclave. The SM verifies the integrity of the enclave binary, computes its cryptographic hash, and sets up the memory layout in such a way that only the enclave code has access to its memory contents~\cite{lee2019keystone,keystone2025how}.
+
+Furthermore, PMP entries are reconfigured dynamically during enclave context switches. For example, when the host operating system regains control, the PMP settings are altered to revoke access to the enclave’s memory. Conversely, when the enclave resumes execution, the SM reinstates its PMP region. This dynamic switching is essential to enforce temporal isolation and prevent time-of-check-to-time-of-use (TOCTTOU) vulnerabilities that may arise during state transitions~\cite{cerberus2022}.
+
+Despite its utility, PMP has several practical limitations. The fixed number of PMP entries restricts the number of simultaneously protected regions, posing a challenge for complex systems with many isolated domains or subregions. Moreover, overlapping PMP regions are resolved based on entry priority (lower-numbered entries take precedence), requiring careful configuration to avoid inadvertent leaks or privilege escalations~\cite{riscvprivspec}.
+
+Security researchers have explored various enhancements and formal models to increase the reliability and verifiability of PMP-based isolation. For example, Cerberus~\cite{cerberus2022} builds a formally verified memory-sharing abstraction over PMP to enable safe communication between enclaves and untrusted components. Similarly, HexBox~\cite{hexbox2018} leverages PMP for real-time embedded security by associating memory regions with specific control-flow paths in embedded firmware, demonstrating PMP's applicability beyond general-purpose computing.
+
+The role of PMP in Keystone exemplifies how low-complexity hardware primitives can be orchestrated by secure software layers to implement strong isolation guarantees. This synergy is particularly effective in the RISC-V ecosystem, where the open architecture allows deep customization, formal verification, and academic experimentation~\cite{Survey2023}. The combination of PMP, a secure boot mechanism, and a minimal TCB enables Keystone to enforce hardware-rooted enclave isolation without relying on opaque, vendor-specific extensions, setting it apart from alternatives like Intel SGX or ARM TrustZone~\cite{dayeol2019keystone,turn0search0}.
+
+In conclusion, Physical Memory Protection in RISC-V is a powerful, lightweight, and deterministic mechanism that underpins secure execution in many RISC-V-based platforms. Its integration into frameworks like Keystone enables transparent and verifiable enclave isolation while remaining suitable for constrained systems. As the RISC-V ecosystem continues to evolve, PMP will remain a fundamental building block for secure, open, and formally analyzable trusted computing platforms.
 
 \section{Post-Quantum Cryptography: Kyber Algorithm}
 \label{sec:kyber}
@@ -72,6 +99,13 @@ Kyber supports three security levels:
     \item \textbf{Kyber-768}, targeting AES-192-level security (recommended),
     \item \textbf{Kyber-1024}, targeting AES-256-level security.
 \end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/kyber_768.png}
+\caption{Kyber768 Key Exchange Algorithm}
+\label{fig:kyber_768}
+\end{figure}
 
 \begin{table}[h]
 \centering

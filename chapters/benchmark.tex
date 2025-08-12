@@ -12,14 +12,44 @@ Through these experiments, we uncover both expected and non-trivial behaviors. F
 The results presented in this chapter serve as the empirical foundation for the interpretive analysis in the next chapter. By rigorously characterizing the performance profile of Keystone enclaves, we establish a data-driven basis for understanding the broader implications of enclave deployment in secure system design, as well as informing practical strategies for optimization and resource management.
 
 \section{Baseline: Native (Non-Enclave) Performance}
+\label{sec:baseline-native}
 
-To establish a baseline for evaluating enclave overheads, we first executed all benchmarks natively on the simulated RISC-V platform without any enclave isolation. This phase allows us to measure the raw performance characteristics of the system and isolate the costs introduced solely by secure execution.
+To establish a reliable baseline for evaluating the performance overhead introduced by secure enclaves, we first measured native (non-enclave) execution of key benchmarks on the simulated RISC-V platform. All benchmarks were executed under controlled conditions consistent with the previously described parameter variation framework, focusing primarily on the Low-End Baseline setup with 64~MB RAM, a single CPU core, and sequential execution.
 
-The Dhrystone and CoreMark benchmarks exhibited expected scaling behavior with respect to CPU cores and memory size. As CPU core count increased, throughput for these parallelizable benchmarks improved approximately linearly, reflecting efficient multi-threaded execution on the underlying hardware. Memory size impacted CoreMark more noticeably, particularly during memory-intensive phases, where increased memory reduced paging and improved cache hit rates. In contrast, Dhrystone’s smaller working set resulted in negligible sensitivity to memory size variations.
+The selected benchmarks include synthetic workloads CoreMark and Dhrystone, both widely used in embedded systems performance evaluation, as well as cryptographic primitives from the Kyber post-quantum key encapsulation mechanism (KEM). Each benchmark was run multiple times---typically ten iterations---with the initial run discarded to mitigate artifacts from JIT warm-up and caching effects inherent to the QEMU TCG runtime. Reported metrics represent averages over the remaining nine runs, with standard deviations provided where applicable.
 
-The Kyber cryptographic benchmark behaved differently. Due to its inherently sequential algorithmic structure, Kyber’s execution time remained relatively constant across changes in CPU core count. Likewise, memory size had minimal impact on Kyber performance, as its working set comfortably fit within allocated memory without inducing paging.
+Key performance metrics collected include wall-clock execution time (measured using high-resolution timers), throughput indicators such as iterations or Dhrystones per second, CPU utilization (user and system time), memory footprint (peak resident set size), page fault counts, context switch statistics, and cache metrics obtained via the QEMU TCG cache plugin.
 
-These native baseline results confirm the stability and predictability of the simulated system environment, providing a solid foundation for subsequent enclave overhead analysis.
+Figure~\ref{fig:coremark_native} presents CoreMark results under the 10-run sequential configuration. The benchmark demonstrated high stability, with an average elapsed time of 107.5 seconds and approximately 939 iterations per second. CPU utilization was predominantly user-space (81.4 seconds) with minimal system overhead (1 second). Memory consumption remained low at 10~KB RSS, and page fault and context switch counts indicated a minimally interrupted environment.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/coremark_64M_1Core_native_metrics.pdf}
+    \caption{CoreMark Native Execution Summary (10 Runs, Low-End Baseline)}
+    \label{fig:coremark_native}
+\end{figure}
+
+Figure~\ref{fig:dhrystone_native} summarizes Dhrystone benchmark native execution results. The mean elapsed time was approximately 102.8 seconds, with throughput near 96,200 Dhrystones per second. User CPU time was steady at 10.3 seconds, and system CPU time was negligible. Minor page faults were more frequent than in CoreMark, reflecting normal demand paging, and involuntary context switches occurred regularly due to scheduler activity but did not noticeably impact throughput.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/dhrystone_64M_1Core_native_metrics.pdf}
+    \caption{Dhrystone Native Execution Summary (10 Runs, Low-End Baseline)}
+    \label{fig:dhrystone_native}
+\end{figure}
+
+Figure~\ref{fig:kyber_native_cycles} reports median CPU cycle counts for Kyber cryptographic operations measured in native mode on the Low-End Baseline configuration. Keypair generation, encapsulation, and decapsulation were profiled across Kyber-512, Kyber-768, and Kyber-1024 parameter sets. All showed consistent cycle counts, indicating stable execution and resource usage.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/kyber_64M_1Core.pdf}
+    \caption{Kyber Native Execution: Average CPU Cycles per Operation}
+    \label{fig:kyber_native_cycles}
+\end{figure}
+
+Cache statistics collected via the QEMU plugin across all benchmarks indicated predictable access patterns consistent with compute-bound workloads. Instruction and data cache miss rates remained low, reinforcing the stability of native execution on this platform.
+
+In summary, these native baseline results confirm a stable and well-characterized environment with minimal interference or resource contention. This baseline provides a critical reference for comparing enclave-mode execution and precisely quantifying the overhead of secure execution under representative embedded system constraints.
 
 \section{Enclave Execution Results and Overheads}
 
