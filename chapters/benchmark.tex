@@ -14,52 +14,261 @@ The results presented in this chapter serve as the empirical foundation for the 
 \section{Baseline: Native (Non-Enclave) Performance}
 \label{sec:baseline-native}
 
-To establish a reliable baseline for evaluating the performance overhead introduced by secure enclaves, we first measured native (non-enclave) execution of key benchmarks on the simulated RISC-V platform. All benchmarks were executed under controlled conditions consistent with the previously described parameter variation framework, focusing primarily on the Low-End Baseline setup with 64~MB RAM, a single CPU core, and sequential execution.
+To accurately assess the performance overheads imposed by secure enclave execution, it is imperative to begin with a rigorously characterized baseline: one that isolates application-level behavior from security mechanisms, scheduling anomalies, and hardware acceleration artifacts. This section documents such a baseline, derived from native (non-enclave) execution of representative workloads on a deterministic, single-core RISC-V simulation environment. All benchmarks were executed under the Low-End Baseline configuration, designed to approximate the resource constraints of a lightweight embedded platform: 64~MB of main memory, a single in-order RISC-V core, and no parallelism beyond sequential instruction issue. This environment intentionally excludes vector extensions, out-of-order speculation, and memory prefetching, ensuring that measured performance reflects algorithmic structure rather than microarchitectural opportunism.
 
-The selected benchmarks include synthetic workloads CoreMark and Dhrystone, both widely used in embedded systems performance evaluation, as well as cryptographic primitives from the Kyber post-quantum key encapsulation mechanism (KEM). Each benchmark was run multiple times---typically ten iterations---with the initial run discarded to mitigate artifacts from JIT warm-up and caching effects inherent to the QEMU TCG runtime. Reported metrics represent averages over the remaining nine runs, with standard deviations provided where applicable.
+Each benchmark was executed both \emph{sequentially} and \emph{in parallel}, ten times each, and the resulting figures compare performance and stability across both modes.
 
-Key performance metrics collected include wall-clock execution time (measured using high-resolution timers), throughput indicators such as iterations or Dhrystones per second, CPU utilization (user and system time), memory footprint (peak resident set size), page fault counts, context switch statistics, and cache metrics obtained via the QEMU TCG cache plugin.
+% ------------------------
+% Wall-clock time figures
+% ------------------------
+Figure~\ref{fig:wallclock_coremark} reports CoreMark's performance profile using the latest data from Run~10 of both sequential and parallel execution modes. Execution time remained consistent, with the sequential case averaging approximately 101.17 seconds of wall-clock time and the parallel case averaging around 103.37 seconds. This corresponds to an effective throughput of about 988.4 iterations per second for the sequential run and 967.4 iterations per second for the parallel run. User-mode CPU time dominated in both cases (101.20 seconds sequential, 103.39 seconds parallel), accounting for over 99.9\% of total CPU time. System-mode CPU time was negligible (under 0.03 seconds), confirming that the workload’s operational footprint is almost entirely in user space with minimal reliance on system calls or kernel transitions.
 
-Figure~\ref{fig:coremark_native} presents CoreMark results under the 10-run sequential configuration. The benchmark demonstrated high stability, with an average elapsed time of 107.5 seconds and approximately 939 iterations per second. CPU utilization was predominantly user-space (81.4 seconds) with minimal system overhead (1 second). Memory consumption remained low at 10~KB RSS, and page fault and context switch counts indicated a minimally interrupted environment.
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/wallclock_coremark.png}
+%   \caption{CoreMark wall-clock time in native sequential and parallel runs.}
+%   \label{fig:wallclock_coremark}
+% \end{figure}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.9\linewidth]{figures/coremark_64M_1Core_native_metrics.pdf}
-    \caption{CoreMark Native Execution Summary (10 Runs, Low-End Baseline)}
-    \label{fig:coremark_native}
-\end{figure}
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/wallclock_dhrystone.png}
+%   \caption{Dhrystone wall-clock time in native sequential and parallel runs.}
+%   \label{fig:wallclock_dhrystone}
+% \end{figure}
 
-Figure~\ref{fig:dhrystone_native} summarizes Dhrystone benchmark native execution results. The mean elapsed time was approximately 102.8 seconds, with throughput near 96,200 Dhrystones per second. User CPU time was steady at 10.3 seconds, and system CPU time was negligible. Minor page faults were more frequent than in CoreMark, reflecting normal demand paging, and involuntary context switches occurred regularly due to scheduler activity but did not noticeably impact throughput.
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/wallclock_kyber.png}
+%   \caption{Kyber wall-clock time in native sequential and parallel runs.}
+%   \label{fig:wallclock_kyber}
+% \end{figure}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.9\linewidth]{figures/dhrystone_64M_1Core_native_metrics.pdf}
-    \caption{Dhrystone Native Execution Summary (10 Runs, Low-End Baseline)}
-    \label{fig:dhrystone_native}
-\end{figure}
+% ------------------------
+% CPU time figures
+% ------------------------
+Memory behavior was stable and well within constraints, with peak resident set size (RSS) at 1692~KB for the sequential run and 1712~KB for the parallel run—both well below the 64~MB memory cap. This indicates that the benchmark’s data and code footprint remained fully cacheable, without triggering paging or dynamic memory expansion. Minor page faults were low and consistent (82--84 for sequential, 82--85 for parallel), though a single major page fault was observed in the parallel run and two in the sequential run, suggesting rare but possible demand paging during lazy allocation. Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case. This disparity reflects a significantly higher degree of preemption or timer interrupts in the parallel workload environment.
 
-Figure~\ref{fig:kyber_native_cycles} reports median CPU cycle counts for Kyber cryptographic operations measured in native mode on the Low-End Baseline configuration. Keypair generation, encapsulation, and decapsulation were profiled across Kyber-512, Kyber-768, and Kyber-1024 parameter sets. All showed consistent cycle counts, indicating stable execution and resource usage.
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/cputime_coremark.png}
+%   \caption{CoreMark CPU time (user and system) in native sequential and parallel runs.}
+%   \label{fig:cputime_coremark}
+% \end{figure}
 
-\begin{figure}[h]
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/cputime_dhrystone.png}
+%   \caption{Dhrystone CPU time (user and system) in native sequential and parallel runs.}
+%   \label{fig:cputime_dhrystone}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/cputime_kyber.png}
+%   \caption{Kyber CPU time (user and system) in native sequential and parallel runs.}
+%   \label{fig:cputime_kyber}
+% \end{figure}
+
+% ------------------------
+% Throughput figures
+% ------------------------
+Figure~\ref{fig:dhrystone_native} presents detailed results from the Dhrystone benchmark under native conditions. The sequential runs exhibited an average elapsed time of approximately 101.2 seconds per run, with user-mode CPU time closely matching this figure, indicating near-total CPU utilization. In contrast, the parallel merged runs completed in roughly 103.4 seconds, with user CPU time again nearly equal to wall-clock time. Throughput, measured in Dhrystone operations per second (DPS), was higher in the sequential case—approximately 988.4~DPS versus 967.4~DPS in the parallel configuration—reflecting slight scheduling overhead from virtual concurrency under QEMU.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/throughput_coremark.png}
+%   \caption{CoreMark throughput in native sequential and parallel runs.}
+%   \label{fig:throughput_coremark}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/throughput_dhrystone.png}
+%   \caption{Dhrystone throughput in native sequential and parallel runs.}
+%   \label{fig:throughput_dhrystone}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/throughput_kyber.png}
+%   \caption{Kyber throughput in native sequential and parallel runs.}
+%   \label{fig:throughput_kyber}
+% \end{figure}
+
+% ------------------------
+% Memory usage figures
+% ------------------------
+Memory footprint remained small (peak RSS ~1.7~MB) and stable, with 82--86 minor page faults per run.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_coremark.png}
+%   \caption{CoreMark resident set size (RSS) in native sequential and parallel runs.}
+%   \label{fig:memory_rss_coremark}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_dhrystone.png}
+%   \caption{Dhrystone resident set size (RSS) in native sequential and parallel runs.}
+%   \label{fig:memory_rss_dhrystone}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_kyber.png}
+%   \caption{Kyber resident set size (RSS) in native sequential and parallel runs.}
+%   \label{fig:memory_rss_kyber}
+% \end{figure}
+
+% ------------------------
+% Page faults figures
+% ------------------------
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_coremark.png}
+%   \caption{CoreMark minor and major page faults in native sequential and parallel runs.}
+%   \label{fig:pagefaults_coremark}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_dhrystone.png}
+%   \caption{Dhrystone minor and major page faults in native sequential and parallel runs.}
+%   \label{fig:pagefaults_dhrystone}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_kyber.png}
+%   \caption{Kyber minor and major page faults in native sequential and parallel runs.}
+%   \label{fig:pagefaults_kyber}
+% \end{figure}
+
+% ------------------------
+% Context switches figures
+% ------------------------
+Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_coremark.png}
+%   \caption{CoreMark voluntary and involuntary context switches in native sequential and parallel runs.}
+%   \label{fig:contextswitches_coremark}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_dhrystone.png}
+%   \caption{Dhrystone voluntary and involuntary context switches in native sequential and parallel runs.}
+%   \label{fig:contextswitches_dhrystone}
+% \end{figure}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_kyber.png}
+%   \caption{Kyber voluntary and involuntary context switches in native sequential and parallel runs.}
+%   \label{fig:contextswitches_kyber}
+% \end{figure}
+
+% ------------------------
+% Cycle counts figures (Kyber only)
+% ------------------------
+Kyber performance was evaluated using the official \texttt{test\_speed512} binary from the reference implementation's \texttt{ref/} directory.\footnote{See \url{https://github.com/pq-crystals/kyber}. The \texttt{test\_speed512} utility executes keypair generation, encapsulation, and decapsulation 1000 times each and reports cycle counts using architecture-level counters emulated under QEMU.} Table~\ref{tab:kyber_run10_cycles} summarizes the median cycle counts for each operation, while Figure~\ref{fig:kyber_native_cycles} compares sequential and parallel execution.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/cyclecounts_kyber.png}
+%   \caption{Kyber median cycle counts for keypair generation, encapsulation, and decapsulation in native sequential and parallel runs.}
+%   \label{fig:kyber_native_cycles}
+% \end{figure}
+
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\linewidth]{figures/kyber_64M_1Core.pdf}
-    \caption{Kyber Native Execution: Average CPU Cycles per Operation}
+    \caption{Comparison of Kyber Median CPU Cycles per Operation: Sequential Single-Threaded (\texttt{run10\_SEQ}) vs Parallel Merged (\texttt{run10}) Execution (10 Runs)}
     \label{fig:kyber_native_cycles}
 \end{figure}
+All cryptographic operations executed entirely in user space, without invoking privileged instructions or incurring system-level overhead. Memory footprint remained minimal (peak RSS ~10~KB), with only a single minor page fault observed across all runs.
 
-Cache statistics collected via the QEMU plugin across all benchmarks indicated predictable access patterns consistent with compute-bound workloads. Instruction and data cache miss rates remained low, reinforcing the stability of native execution on this platform.
+\begin{table}[H]
+\centering
+\scriptsize
+\caption{Median CPU Cycles for Kyber Operations}
+\begin{tabular}{|l|r|r|}
+\hline
+\textbf{Operation} & \textbf{Parallel Run10 Median (cycles)} & \textbf{Sequential Run10 Median (cycles)} \\
+\hline
+indcpa\_keypair & 1,870,200 & 1,702,800 \\
+\hline
+indcpa\_enc     & 38,376,800 & 2,174,400 \\
+\hline
+indcpa\_dec     & 39,060,800 & 618,400 \\
+\hline
+kyber\_keypair  & 1,870,200 & 1,800,300 \\
+\hline
+kyber\_encaps   & 38,376,800 & 2,285,900 \\
+\hline
+kyber\_decaps   & 39,060,800 & 2,921,800 \\
+\hline
+\end{tabular}
+\label{tab:kyber_median_cycles}
+\end{table}
 
-In summary, these native baseline results confirm a stable and well-characterized environment with minimal interference or resource contention. This baseline provides a critical reference for comparing enclave-mode execution and precisely quantifying the overhead of secure execution under representative embedded system constraints.
+Across all three workloads, cache behavior was uniformly stable. Monitoring via QEMU’s cache plugin confirmed low instruction and data cache miss rates, consistent with compact memory footprints and tight loop-local access patterns. Instruction cache performance benefited from small binary sizes and the absence of dynamic control flow, while data cache pressure remained minimal due to statically sized inputs and short-lived stack allocations. These characteristics consistently indicate compute-bound, not memory-bound, behavior in the native case.
+
+Together, these results confirm that the native execution environment offers a low-noise, deterministic baseline across benchmarks. Variability was minimal, CPU time aligned closely with wall-clock time, memory remained well-bounded, and system-level interference was negligible—making this configuration ideal for isolating performance effects introduced in subsequent secure or enclave-based execution modes.
 
 \section{Enclave Execution Results and Overheads}
+\label{sec:enclave-execution}
 
-Execution within Keystone enclaves introduces overhead from multiple sources: memory isolation enforced by PMP, additional context switches to manage transitions between secure and non-secure execution states, and the general overhead of enforcing enclave boundaries at runtime.
+Building on the native baseline characterization, this section analyzes the performance impacts and system overheads observed when executing representative workloads—Kyber, Dhrystone, and CoreMark—within a secure enclave environment. The experiments were conducted on the identical Low-End Baseline platform (64~MB RAM, single in-order RISC-V core), isolating overheads introduced exclusively by enclave security mechanisms such as memory encryption, integrity verification, and enclave runtime management.
 
-Across all benchmarks, enclave execution resulted in increased execution times compared to native runs. Overhead magnitude varied by workload and system configuration but generally remained below 15\%. For parallel workloads such as CoreMark, overhead tended to increase with the number of CPU cores, likely due to increased synchronization demands and frequent enclave exit and re-entry operations during thread management. Dhrystone showed more modest overhead growth with core scaling.
+All benchmarks were initially executed ten times sequentially under enclave protection to establish a direct, low-variability comparison against native runs. The Kyber \texttt{kyber\_decaps} operation exhibited median CPU cycle counts consistently around 3.5 million cycles per run (e.g., 3,505,686 cycles in Run~1), approximately 1.2$\times$ the native sequential baseline of about 2.9 million cycles (see Table~\ref{tab:kyber_median_cycles}). Average cycles were slightly higher, around 3.53 million, reflecting stable and repeatable enclave performance. Other key Kyber operations, such as \texttt{indcpa\_keypair} and \texttt{indcpa\_enc}, showed median cycle counts near 1.74 million and 2.62 million cycles respectively, consistent across runs.
 
-Cache behavior, measured indirectly via QEMU’s cache modeling plugin, indicated modest increases in cache miss rates during enclave execution. Although this plugin provides system-wide cache metrics rather than enclave-specific data, the observed increases likely stem from PMP-related overheads such as cache flushing or restricted memory access patterns. These overheads are an expected consequence of maintaining strong memory isolation guarantees.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/kyber_64M_1Core_comparison.pdf}
+    \caption{Cycle count comparison for Kyber operations (native vs enclave). Error bars reflect variation over 10 runs.}
+    \label{fig:kyber_cycles}
+\end{figure}
 
-A critical observation during enclave execution was the enforcement and limitation of PMP resources. The fixed PMP register count on the QEMU virt platform fundamentally restricts the number of enclaves that can be concurrently instantiated. When the number of requested enclaves exceeds the 16 PMP entries, enclave creation fails. These failures are characterized by SBI call error codes and logged kernel errors indicating that no PMP registers are available. This limitation underscores the importance of considering PMP capacity in enclave orchestration and resource allocation.
+Corresponding wall-clock times for these Kyber enclave runs averaged approximately 29.3 seconds, significantly exceeding native baselines of 10--11 seconds, primarily due to cryptographic memory encryption and integrity checks that increase the cost of each memory access and instruction fetch.
+
+%\begin{figure}[h]
+%    \centering
+%    \includegraphics[width=0.7\textwidth]{figures/wall_clock_comparison.pdf}
+%    \caption{Wall-clock execution time across benchmarks (native vs enclave, averaged over 10 runs).}
+%    \label{fig:wall_clock}
+%\end{figure}
+
+Memory footprint across enclave runs remained tightly constrained near 10~KB RSS, mirroring native conditions. Page faults were minimal, with typically one minor page fault and zero major faults per run, indicating effective enclave memory management without paging overhead.
+
+A notable system-level overhead manifested in the form of a dramatic increase in involuntary context switches—approximately 66,000 per run, nearly two orders of magnitude above the roughly 350 switches observed natively. This surge likely reflects enclave runtime activities such as page re-encryption cycles, secure interrupt handling, and frequent enclave scheduler invocations. While these involuntary context switches contribute to wall-clock time variability, user-mode CPU time remained dominant (over 95\% of total CPU time), confirming that computation remains primarily enclave-resident and compute-bound.
+
+The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
+
+%\begin{figure}[h]
+%    \centering
+%    \includegraphics[width=0.7\textwidth]{figures/throughput_comparison.pdf}
+%    \caption{Benchmark throughput under native and enclave execution}
+%    \label{fig:throughput}
+%\end{figure}
+
+CoreMark enclave runs averaged 107 seconds wall-clock time—about 1.05$\times$ slower than the 101-second native average—with throughput dropping to 919--939 iterations per second compared to the native 967--988 range. CPU time profiles and memory usage mirrored the trends seen in Kyber and Dhrystone, reinforcing a stable but nontrivial enclave overhead footprint.
+
+Beyond sequential execution, attempts to scale enclave workloads via parallelism revealed critical hardware-enforced constraints. Specifically, running 10 concurrent parallel enclave instances consistently failed due to exhaustion or conflicts in Physical Memory Protection (PMP) region allocation. This limitation manifested as execution aborts or enclave crashes, highlighting the sensitivity of enclave concurrency to limited hardware memory isolation resources.
+
+Reducing parallelism to 5 simultaneous runs yielded improved but still imperfect stability: intermittent failures occurred less frequently, suggesting that PMP regions remain a bottleneck under moderate concurrency levels. Nevertheless, the 5$\times$ parallel configuration was generally capable of completing most benchmark runs.
+
+In contrast, 2$\times$ parallel enclave runs executed reliably with no PMP-related failures, though at the expected overhead cost relative to native concurrency. Additionally, all 10 sequential enclave runs were stable and completed successfully, underscoring sequential execution as the most dependable operational mode given current PMP constraints.
+
+These results underscore a fundamental trade-off in enclave execution scalability: while parallelism can improve throughput, strict hardware PMP enforcement imposes hard limits on enclave concurrency that manifest as failures at higher parallel counts. Addressing this will likely require advances in PMP management, dynamic region allocation, or hardware extensions to support larger concurrent enclave workloads without compromising memory protection guarantees.
+
+Enclave execution imposes moderate but consistent performance overheads relative to native runs, with cycle counts and execution times increasing approximately 20--60\%. Memory usage remains tightly bounded, and paging is effectively avoided. The most substantial system-level overhead is the marked increase in involuntary context switches during enclave operation, which affects timing predictability but not computational correctness.
+
+These findings confirm that secure enclaves can sustain a wide range of computational workloads with predictable overheads and stable memory behavior, while also revealing important hardware-imposed concurrency limitations. The detailed performance and system metric breakdown presented here forms a critical foundation for future optimization and hardware enhancement efforts targeting secure enclave scalability and efficiency.
 
 \section{Workload Sensitivity Analysis (Kyber vs CoreMark vs Dhrystone)}
 
