@@ -7,6 +7,60 @@ All benchmarks were executed within an emulated environment configured for the R
 
 To assess the performance implications of enclave-based isolation, each benchmark was implemented as a standalone enclave application (referred to as an \textit{eapp}), accompanied by a corresponding host application responsible for enclave lifecycle management. The host application, running in user space, handles enclave initialization, benchmark loading, invocation of enclave entry points, and inter-domain communication via edge calls. In contrast, the enclave application is fully isolated by the Keystone runtime and contains only the benchmark logic and associated data structures. This strict separation ensures that the same benchmark codebase can be executed both natively (without isolation) and securely (within an enclave), without requiring structural changes—thus enabling a fair and consistent comparative analysis.
 
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    >=latex,
+    node distance=1.4cm and 3.5cm,
+    lane/.style={
+        rectangle,
+        draw=black!80,
+        thick,
+        minimum width=6.5cm,
+        minimum height=0.8cm,
+        rounded corners,
+        align=center,
+        text width=6.2cm,
+        fill=gray!5
+    },
+    arrow/.style={->, very thick},
+    laneTitle/.style={
+        font=\bfseries,
+        fill=blue!15,
+        rounded corners,
+        draw=black!80,
+        minimum height=0.8cm
+    }
+]
+
+% Lane titles
+\node[laneTitle, text width=6.5cm] (lane1) {Setup \& Configuration};
+\node[laneTitle, right=of lane1]   (lane2) {Execution \& Analysis};
+
+% Setup lane nodes
+\node[lane, below=of lane1] (start)   {\textbf{Define benchmark set}};
+\node[lane, below=of start] (config)  {\textbf{Select hardware configuration}};
+
+% Execution lane nodes
+\node[lane, below=of lane2] (native)  {\textbf{Run benchmarks in native mode}};
+\node[lane, below=of native] (enclave) {\textbf{Run benchmarks in enclave mode}};
+\node[lane, below=of enclave] (metrics) {\textbf{Collect performance metrics}};
+\node[lane, below=of metrics] (analyze) {\textbf{Compare and analyze overheads}};
+\node[lane, fill=green!10, below=of analyze] (end) {\textbf{Store logs and archive results}};
+
+% Arrows
+\draw[arrow] (start) -- (config);
+\draw[arrow] (config.east) -- ++(0.8,0) -- ++(0,-0.7) -- (native.west);
+\draw[arrow] (native) -- (enclave);
+\draw[arrow] (enclave) -- (metrics);
+\draw[arrow] (metrics) -- (analyze);
+\draw[arrow] (analyze) -- (end);
+
+\end{tikzpicture}
+\caption{Benchmarking and data collection workflow}
+\label{fig:benchmarking-swimlane}
+\end{figure}
+
 The experimental evaluation was conducted using two well-established benchmarking tools—Dhrystone and CoreMark—each executed under two configurations:
 
 \begin{enumerate}
@@ -221,25 +275,3 @@ To compute the enclave-specific performance overhead, we employed a normalized o
 This percentage-based formulation allows for direct cross-comparison of overheads across workloads with differing baseline durations. It also facilitates trend identification across system configurations, particularly when assessing scaling behaviors.
 
 For reproducibility, all benchmarking scripts, system configurations, QEMU command-line options, Keystone runtime parameters, and cache plugin settings were version-controlled using Git. Raw benchmark outputs, kernel logs, and cache plugin trace files were archived and documented. A complete snapshot of the experimental infrastructure, along with scripts to regenerate results, is provided in Appendix~\ref{appendix:cache-plugin}. This archival effort ensures that all reported results can be independently verified and reproduced by future researchers or evaluators.
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=1.75cm]
-\node (start)   [process] {Start: Define Benchmark Set};
-\node (config)  [process, below of=start] {Select Hardware Configuration};
-\node (native)  [process, below of=config] {Run Benchmarks in Native Mode};
-\node (enclave) [process, below of=native] {Run Benchmarks in Enclave Mode};
-\node (metrics) [process, below of=enclave] {Collect Performance Metrics};
-\node (analyze) [process, below of=metrics] {Compare and Analyze Overheads};
-\node (end)     [process, below of=analyze] {Store Logs and Archive Results};
-
-\draw [arrow] (start)   -- (config);
-\draw [arrow] (config)  -- (native);
-\draw [arrow] (native)  -- (enclave);
-\draw [arrow] (enclave) -- (metrics);
-\draw [arrow] (metrics) -- (analyze);
-\draw [arrow] (analyze) -- (end);
-\end{tikzpicture}
-\caption{Benchmarking and Data Collection Workflow}
-\label{fig:benchmarking-workflow}
-\end{figure}

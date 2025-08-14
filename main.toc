@@ -1,0 +1,38 @@
+\babel@toc {english}{}\relax 
+\babel@toc {german}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {german}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {german}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {english}{}\relax 
+\babel@toc {english}{}\relax 
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Contributions of this Thesis}{2}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Related Work}{3}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Structure of this Thesis}{3}{section.1.3}%
+\contentsline {chapter}{\numberline {2}Background and Related Technologies}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Trusted Execution Environments}{6}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Keystone Enclave Architecture}{7}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Physical Memory Protection (PMP) in RISC-V}{9}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Post-Quantum Cryptography: Kyber Algorithm}{10}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Comparative Overview of TEE}{13}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Performance Challenges in Secure Execution}{14}{section.2.6}%
+\contentsline {chapter}{\numberline {3}System Design and Methodology}{16}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Experimental Platform and Environment}{18}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Integration of Kyber into Keystone}{20}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Benchmarking Suite and Metrics}{21}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Parameter Configuration and Variation}{23}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Data Collection and Reproducibility}{24}{section.3.5}%
+\contentsline {chapter}{\numberline {4}Benchmarking Results and Observations}{27}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Baseline: Native (Non-Enclave) Performance}{28}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Enclave Execution Results and Overheads}{30}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Workload Sensitivity Analysis (Kyber vs CoreMark vs Dhrystone)}{32}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Impact of Hardware Parameters (Cores, Memory, Cache)}{34}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Interpretation and Broader Implications}{35}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Synthesis of Key Performance Trends}{36}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Hardware Bottlenecks and PMP Utilization Strategies}{37}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Implications for Secure System Design and Cryptographic Workloads}{39}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Recommendations and Considerations for Future TEE Deployments}{39}{section.5.4}%
+\contentsline {chapter}{\numberline {6}Conclusion}{40}{chapter.6}%
+\contentsline {chapter}{Bibliography}{41}{chapter*.2}%
