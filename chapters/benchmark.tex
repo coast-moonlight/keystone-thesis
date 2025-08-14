@@ -192,29 +192,30 @@ Kyber performance was evaluated using the official \texttt{test\_speed512} binar
 \end{figure}
 All cryptographic operations executed entirely in user space, without invoking privileged instructions or incurring system-level overhead. Memory footprint remained minimal (peak RSS ~10~KB), with only a single minor page fault observed across all runs.
 
-\begin{table}[H]
+\begin{table}[h]
 \centering
 \scriptsize
-\caption{Median CPU Cycles for Kyber Operations}
-\begin{tabular}{|l|r|r|}
+\begin{tabular}{|l|r|r|p{4.5cm}|}
 \hline
-\textbf{Operation} & \textbf{Parallel Run10 Median (cycles)} & \textbf{Sequential Run10 Median (cycles)} \\
+\textbf{Operation} & \textbf{Parallel Run10 Median (cycles)} & \textbf{Sequential Run10 Median (cycles)} & \textbf{Rationale / Notes} \\
 \hline
-indcpa\_keypair & 1,870,200 & 1,702,800 \\
+indcpa\_keypair & 1,870,200 & 1,702,800 & Baseline IND-CPA key generation cost for setting up public/private pairs. \\
 \hline
-indcpa\_enc     & 38,376,800 & 2,174,400 \\
+indcpa\_enc     & 38,376,800 & 2,174,400 & Parallel vs sequential encryption overhead comparison. \\
 \hline
-indcpa\_dec     & 39,060,800 & 618,400 \\
+indcpa\_dec     & 39,060,800 & 618,400   & Decryption efficiency gap between modes. \\
 \hline
-kyber\_keypair  & 1,870,200 & 1,800,300 \\
+kyber\_keypair  & 1,870,200 & 1,800,300 & Full Kyber keypair generation timing. \\
 \hline
-kyber\_encaps   & 38,376,800 & 2,285,900 \\
+kyber\_encaps   & 38,376,800 & 2,285,900 & Encapsulation performance with shared secret derivation. \\
 \hline
-kyber\_decaps   & 39,060,800 & 2,921,800 \\
+kyber\_decaps   & 39,060,800 & 2,921,800 & Decapsulation latency and handshake completion time. \\
 \hline
 \end{tabular}
+\caption{Median CPU cycles for Kyber operations with concise context to fit page width.}
 \label{tab:kyber_median_cycles}
 \end{table}
+
 
 Across all three workloads, cache behavior was uniformly stable. Monitoring via QEMU’s cache plugin confirmed low instruction and data cache miss rates, consistent with compact memory footprints and tight loop-local access patterns. Instruction cache performance benefited from small binary sizes and the absence of dynamic control flow, while data cache pressure remained minimal due to statically sized inputs and short-lived stack allocations. These characteristics consistently indicate compute-bound, not memory-bound, behavior in the native case.
 
@@ -245,16 +246,23 @@ Corresponding wall-clock times for these Kyber enclave runs averaged approximate
 
 Memory footprint across enclave runs remained tightly constrained near 10~KB RSS, mirroring native conditions. Page faults were minimal, with typically one minor page fault and zero major faults per run, indicating effective enclave memory management without paging overhead.
 
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.75\linewidth]{figures/enclave_memory_pagefaults.png}
+%   \caption{Resident Set Size (RSS) memory usage and page fault counts during Kyber enclave runs, showing stable memory consumption and minimal paging overhead.}
+%   \label{fig:memory_pagefaults}
+% \end{figure}
+
 A notable system-level overhead manifested in the form of a dramatic increase in involuntary context switches—approximately 66,000 per run, nearly two orders of magnitude above the roughly 350 switches observed natively. This surge likely reflects enclave runtime activities such as page re-encryption cycles, secure interrupt handling, and frequent enclave scheduler invocations. While these involuntary context switches contribute to wall-clock time variability, user-mode CPU time remained dominant (over 95\% of total CPU time), confirming that computation remains primarily enclave-resident and compute-bound.
 
-The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.75\linewidth]{figures/context_switches_comparison.png}
+%   \caption{Involuntary context switches during native versus enclave execution, highlighting a nearly 200$\times$ increase under enclave protection.}
+%   \label{fig:context_switches}
+% \end{figure}
 
-%\begin{figure}[h]
-%    \centering
-%    \includegraphics[width=0.7\textwidth]{figures/throughput_comparison.pdf}
-%    \caption{Benchmark throughput under native and enclave execution}
-%    \label{fig:throughput}
-%\end{figure}
+The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
 
 CoreMark enclave runs averaged 107 seconds wall-clock time—about 1.05$\times$ slower than the 101-second native average—with throughput dropping to 919--939 iterations per second compared to the native 967--988 range. CPU time profiles and memory usage mirrored the trends seen in Kyber and Dhrystone, reinforcing a stable but nontrivial enclave overhead footprint.
 
@@ -264,6 +272,13 @@ Reducing parallelism to 5 simultaneous runs yielded improved but still imperfect
 
 In contrast, 2$\times$ parallel enclave runs executed reliably with no PMP-related failures, though at the expected overhead cost relative to native concurrency. Additionally, all 10 sequential enclave runs were stable and completed successfully, underscoring sequential execution as the most dependable operational mode given current PMP constraints.
 
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.75\linewidth]{figures/enclave_parallelism_stability.png}
+%   \caption{Effect of parallel enclave instances on execution stability. Failures increase sharply beyond 5 concurrent runs due to PMP region limitations.}
+%   \label{fig:parallelism_stability}
+% \end{figure}
+
 These results underscore a fundamental trade-off in enclave execution scalability: while parallelism can improve throughput, strict hardware PMP enforcement imposes hard limits on enclave concurrency that manifest as failures at higher parallel counts. Addressing this will likely require advances in PMP management, dynamic region allocation, or hardware extensions to support larger concurrent enclave workloads without compromising memory protection guarantees.
 
 Enclave execution imposes moderate but consistent performance overheads relative to native runs, with cycle counts and execution times increasing approximately 20--60\%. Memory usage remains tightly bounded, and paging is effectively avoided. The most substantial system-level overhead is the marked increase in involuntary context switches during enclave operation, which affects timing predictability but not computational correctness.
@@ -271,14 +286,49 @@ Enclave execution imposes moderate but consistent performance overheads relative
 These findings confirm that secure enclaves can sustain a wide range of computational workloads with predictable overheads and stable memory behavior, while also revealing important hardware-imposed concurrency limitations. The detailed performance and system metric breakdown presented here forms a critical foundation for future optimization and hardware enhancement efforts targeting secure enclave scalability and efficiency.
 
 \section{Workload Sensitivity Analysis (Kyber vs CoreMark vs Dhrystone)}
+\label{sec:workload-sensitivity}
 
-The Kyber post-quantum cryptographic algorithm is a representative workload for evaluating the performance impact of enclave execution on security-critical applications. Kyber consists of three primary operations—key generation, encapsulation, and decapsulation—each profiled extensively within enclaves using the Keystone timer API to capture precise cycle counts.
+This section presents a comparative analysis of enclave-induced overheads across three fundamentally different workload types: cryptographic (Kyber), general-purpose embedded (CoreMark), and integer-heavy synthetic benchmarks (Dhrystone). The goal is to understand how diverse computational patterns react to the constraints and runtime characteristics of trusted enclave execution, particularly under a constrained hardware configuration.
 
-Execution within enclaves increased Kyber’s runtime by approximately 7–9\% compared to native execution. This overhead is modest given the cryptographic operations’ complexity and the security benefits provided by enclaves.
+All evaluations were performed on a minimal RISC-V platform comprising a single in-order core and 64~MB of RAM, consistent with prior sections. Each workload was executed both natively and within the secure enclave environment, under identical operating conditions. Enclave runs were repeated ten times sequentially to reduce interference, and measurements were recorded using Linux time utilities and cycle counters embedded in the enclave runtime. System-level statistics, such as context switches, resident set size (RSS), and page fault counts, were also gathered to provide a holistic view of the overheads.
 
-As with native execution, Kyber performance was insensitive to increases in CPU core count due to its inherently sequential design. Memory usage during enclave execution remained stable, with no indications of paging or contention. System-wide cache miss rates observed through QEMU remained consistent with Kyber’s memory access patterns, including phases dominated by number-theoretic transforms and polynomial arithmetic.
+Among the three workloads, Kyber proved to be the most sensitive to enclave-related performance impacts. The median number of CPU cycles for its \texttt{kyber\_decaps} operation increased from approximately 2.9 million in the native case to over 3.5 million when executed inside the enclave—a roughly 1.2$\times$ increase. However, this difference was magnified in terms of wall-clock time: the native execution completed in approximately 10.7 seconds, whereas the enclave version averaged 29.2 seconds, representing a 2.7$\times$ slowdown. This discrepancy suggests that memory encryption and integrity verification add nontrivial latency per memory access, disproportionately affecting workloads with dense memory usage or pointer-heavy data structures, which are characteristic of lattice-based cryptographic primitives like Kyber.
 
-From a resource perspective, the requirement of one PMP entry per enclave constrains the number of parallel Kyber instances that can be simultaneously deployed. This constraint must be taken into account when designing systems requiring multiple isolated cryptographic operations.
+In stark contrast, CoreMark exhibited the least performance degradation under enclave execution. Wall-clock time increased only slightly, from a native average of 101.5 seconds to 107.3 seconds in the enclave, corresponding to a 1.06$\times$ overhead. This minimal slowdown is attributed to CoreMark’s balanced workload structure, combining arithmetic operations, control logic, and memory accesses in a manner that is less sensitive to cryptographic memory protection. CoreMark’s throughput declined modestly, from a native range of 967--988 iterations per second to an enclave-protected range of 919--939, indicating that while overheads exist, they are amortized over the longer duration and lower frequency of secure memory operations.
+
+Dhrystone occupied a middle ground between Kyber and CoreMark in terms of sensitivity. The wall-clock time for Dhrystone increased from 15.3 seconds natively to 24.7 seconds under enclave protection, yielding an overhead factor of approximately 1.6$\times$. Despite its primary reliance on integer arithmetic and control structures, Dhrystone is sensitive to memory system performance due to its short execution time and tight loops. The secure memory mechanisms in the enclave added consistent latency, resulting in degraded throughput (395,000--408,000 Dhrystone operations per second) when compared to the native baseline of approximately 400,000 DPS. These results confirm that even relatively simple benchmarks experience measurable slowdown under enclave protection, though to a lesser extent than cryptographic workloads.
+
+Across all three benchmarks, system-level metrics revealed a consistent pattern in enclave execution behavior. In particular, the number of involuntary context switches per run consistently exceeded 66,000 for each workload. This value is nearly two orders of magnitude greater than in native runs, where fewer than 400 involuntary context switches were recorded. The uniformity of this value across distinct workloads indicates that the overhead is primarily systemic, driven by the enclave runtime itself rather than specific application behavior. These context switches are likely associated with secure page handling, timer interrupts, and asynchronous enclave runtime maintenance operations. Despite their frequency, the impact appears bounded and does not significantly impair CPU-bound computation, as confirmed by the preservation of user-mode CPU time dominance in all executions.
+
+Memory behavior across enclave runs remained remarkably stable and comparable to native execution. All workloads reported a resident set size (RSS) close to 10~KB, with no major page faults and at most one minor fault per run. This result indicates that the enclave’s memory allocator and secure paging subsystem are sufficiently robust to handle working sets without inducing swapping or paging penalties, even under constrained RAM conditions.
+
+These observations are summarized in Table~\ref{tab:sensitivity-overheads}, which compares native and enclave wall-clock times, overhead factors, and context switch counts across all three benchmarks. Figure~\ref{fig:workload_overhead} visually contrasts the wall-clock overhead imposed by enclave execution, highlighting Kyber’s pronounced sensitivity and CoreMark’s relative resilience.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|c|p{3.5cm}|}
+\hline
+\textbf{Benchmark} & \textbf{Native Time (s)} & \textbf{Enclave Time (s)} & \textbf{Overhead Factor} & \textbf{Involuntary CS} \\
+\hline
+Kyber     & 10.7   & 29.2   & 2.73$\times$  & 66,000 \\
+\hline
+Dhrystone & 15.3   & 24.7   & 1.61$\times$  & 66,000 \\
+\hline
+CoreMark  & 101.5  & 107.3  & 1.06$\times$  & 66,000 \\
+\hline
+\end{tabular}
+\caption{Enclave Execution Sensitivity Across Workloads. Overhead factors indicate slowdown relative to native execution.}
+\label{tab:sensitivity-overheads}
+\end{table}
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.7\linewidth]{figures/workload_overhead_comparison.png}
+%   \caption{Relative increase in wall-clock execution time under enclave protection across three workload types.}
+%   \label{fig:workload_overhead}
+% \end{figure}
+
+In summary, this workload sensitivity analysis reveals a clear hierarchy of enclave overhead impacts based on workload characteristics. Cryptographic workloads, particularly those like Kyber with memory-intensive operations and frequent data-dependent access patterns, are disproportionately affected by the secure memory fabric’s latency and the enclave runtime’s background operations. In contrast, workloads with predictable access patterns or longer execution durations, such as CoreMark, exhibit substantially lower performance degradation. These insights are critical for system designers seeking to deploy trusted execution environments in resource-constrained systems, as they inform trade-offs between security, performance, and workload type.
 
 \section{Impact of Hardware Parameters (Cores, Memory, Cache)}
 

@@ -141,38 +141,52 @@ Given the expansive parameter space created by the combination of memory size, c
 
 \begin{table}[h]
 \centering
-\begin{tabular}{|l|c|c|c|p{7.5cm}|}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|c|c|c|c|c|c|l|}
 \hline
-\textbf{Config Name} & \textbf{RAM} & \textbf{Cores} & \textbf{Execution} & \textbf{Rationale} \\
+\textbf{Configuration} & \textbf{RAM} & \textbf{Cores} & \textbf{Exec.} &
+\textbf{D‑Cache} & \textbf{I‑Cache} & \textbf{Policy} & \textbf{Assoc./Blk (D/I)} \\
 \hline
-Low-End Baseline     & 64M         & 1             & Sequential         & Serves as a minimal configuration, enabling the establishment of baseline performance under constrained conditions. Useful for measuring the raw impact of enclave mechanisms in resource-starved environments. \\
+Low‑End Baseline &
+64\,MB & 1 & Seq. &
+4\,KB & 4\,KB & LRU & 2‑way / 32B,\ 2‑way / 32B \\
 \hline
-Balanced Parallel    & 128M        & 2             & Parallel           & Captures early-stage scaling behavior with modest multicore setups. Helps isolate the overhead introduced by enclave entry/exit in light parallel workloads. \\
+Balanced Parallel &
+128\,MB & 2 & Par. &
+8\,KB & 8\,KB & FIFO & 4‑way / 64B,\ 4‑way / 64B \\
 \hline
-Mid-Range Sequential & 256M        & 4             & Sequential         & Provides a view into how increasing core count and memory capacity affect performance in the absence of thread-level parallelism. Useful for understanding system scalability independent of synchronization effects. \\
+Mid‑Range Sequential &
+256\,MB & 4 & Seq. &
+16\,KB & 8\,KB & Random & 8‑way / 32B,\ 4‑way / 64B \\
 \hline
-High-End Parallel    & 512M        & 6             & Parallel           & Represents a robust configuration where memory and cores are sufficiently provisioned. Designed to observe near-ideal parallel execution and potential scalability limits of the enclave framework. \\
+High‑End Parallel &
+512\,MB & 6 & Par. &
+8\,KB & 16\,KB & LRU & 2‑way / 64B,\ 8‑way / 32B \\
 \hline
-Max Capacity Stress  & 2G          & 10            & Parallel           & Pushes the simulated platform to its upper bounds. Intended to explore saturation points, resource contention, and diminishing returns under heavy system load. \\
+Max Capacity Stress &
+2\,GB & 10 & Par. &
+32\,KB & 32\,KB & FIFO & 16‑way / 64B,\ 16‑way / 64B \\
 \hline
 \end{tabular}
 \caption{Summary of representative configurations used in performance evaluation.}
 \label{tab:configurations}
 \end{table}
 
-In preliminary testing, a number of alternative configurations were explored to validate the diversity and coverage of the selected set. These included scenarios such as single-core systems with excessively large memory allocations and many-core setups with highly constrained memory. However, these combinations typically resulted in either underutilized resources or pathological behavior (e.g., excessive paging or context switching), without contributing new insight beyond what was captured by the five chosen profiles. For example, increasing memory size on a single-core system had negligible impact due to CPU-bound bottlenecks, while increasing core counts in systems with limited memory often led to high levels of involuntary context switching and scheduling overhead.
+In preliminary testing, a wider range of system specifications was explored to ensure that the final selection of five configurations (Table~\ref{tab:configurations}) provided both diversity and coverage. Extreme cases—such as single‑core systems with disproportionately large memory or many‑core systems with severely limited memory—were excluded, as they tended to either underutilize resources or exhibit pathological behaviour (e.g., excessive paging or context‑switching) without yielding additional insight. For example, adding memory to a single‑core system had negligible impact due to CPU‑bound bottlenecks, whereas increasing core counts with insufficient memory frequently caused scheduler overhead and contention.
 
-In addition to varying core and memory resources, three distinct cache configurations were tested across all system profiles to assess the sensitivity of enclave and native workloads to cache architecture. These configurations included:
+In addition to varying memory capacity, core count, and execution mode (sequential or parallel), each configuration was paired with a distinct cache arrangement to assess the sensitivity of enclave and native workloads to cache architecture. The cache parameters are summarised in Table~\ref{tab:configurations} and include:
 
 \begin{itemize}
-    \item A baseline setup featuring 8\,KB, 4-way set-associative caches with an LRU replacement policy
-    \item An enlarged cache with 32\,KB size and 8-way associativity, reflecting more generous cache resources
-    \item A fixed-size cache using FIFO and random eviction policies to model alternative eviction behaviors
+    \item Small caches (4--8\,KB) with low associativity and an LRU replacement policy
+    \item Mid‑sized caches (8--16\,KB) with mixed associativity and FIFO or random replacement
+    \item Large caches (32\,KB) with high associativity and FIFO eviction
 \end{itemize}
 
-All configurations used a consistent block size of 64 bytes to preserve spatial locality across workloads. Although the cache modeling plugin captures system-wide statistics and does not differentiate between enclave and non-enclave activity, observed trends—such as shifts in cache miss rates and access patterns—were analyzed in conjunction with benchmark-level behavior to infer their contribution to observed performance variations.
+All caches used fixed block sizes of 32 or 64\,B, as listed in the table, to maintain consistent spatial locality across workloads. While the cache modelling plugin measures aggregate system statistics without distinguishing enclave from non‑enclave activity, observed trends in miss rates and access patterns were correlated with benchmark behaviour to help attribute performance differences.
 
-To enable direct and consistent comparisons, each benchmark was executed in both native and enclave modes under every configuration. This mirrored design allowed for clear isolation of the performance penalties introduced by enclave execution and helped disentangle architectural effects from security-related overhead.
+For each of the five configurations, all benchmarks were executed in both native and enclave modes. This mirrored arrangement facilitated a clear isolation of enclave‑specific overheads from general architectural effects.
 
 \section{Data Collection and Reproducibility}
 \label{sec:data-collection}
