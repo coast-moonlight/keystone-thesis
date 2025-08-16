@@ -93,7 +93,6 @@ Launching the virtualized system is managed through a Makefile-driven workflow d
 QEMU is launched with flags specifying the machine type (\texttt{virt}), boot ROM and firmware, kernel and root filesystem images, VirtIO devices for block storage and networking, and network forwarding for SSH access. Optionally, a cache plugin \cite{mandour2021cache} can be enabled to provide detailed logging of cache events such as hits, misses, and evictions. This plugin offers deeper insight into the memory hierarchy’s behavior during enclave execution, aiding analysis of performance impacts due to cache and memory isolation overhead.
 
 The cache plugin \cite{mandour2021cache} parameters are fully configurable at runtime, including:
-
 \begin{itemize}
     \item Instruction cache: \texttt{icachesize}, \texttt{iblksize}, \texttt{iassoc} — size, block size, and associativity.  
     \item Data cache: \texttt{dcachesize}, \texttt{dblksize}, \texttt{dassoc} — analogous data cache parameters.  

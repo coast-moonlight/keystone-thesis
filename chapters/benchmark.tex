@@ -190,31 +190,67 @@ Kyber performance was evaluated using the official \texttt{test\_speed512} binar
     \caption{Comparison of Kyber Median CPU Cycles per Operation: Sequential Single-Threaded (\texttt{run10\_SEQ}) vs Parallel Merged (\texttt{run10}) Execution (10 Runs)}
     \label{fig:kyber_native_cycles}
 \end{figure}
+
 All cryptographic operations executed entirely in user space, without invoking privileged instructions or incurring system-level overhead. Memory footprint remained minimal (peak RSS ~10~KB), with only a single minor page fault observed across all runs.
 
-\begin{table}[h]
+\begin{figure}[h]
 \centering
-\scriptsize
-\begin{tabular}{|l|r|r|p{4.5cm}|}
-\hline
-\textbf{Operation} & \textbf{Parallel Run10 Median (cycles)} & \textbf{Sequential Run10 Median (cycles)} & \textbf{Rationale / Notes} \\
-\hline
-indcpa\_keypair & 1,870,200 & 1,702,800 & Baseline IND-CPA key generation cost for setting up public/private pairs. \\
-\hline
-indcpa\_enc     & 38,376,800 & 2,174,400 & Parallel vs sequential encryption overhead comparison. \\
-\hline
-indcpa\_dec     & 39,060,800 & 618,400   & Decryption efficiency gap between modes. \\
-\hline
-kyber\_keypair  & 1,870,200 & 1,800,300 & Full Kyber keypair generation timing. \\
-\hline
-kyber\_encaps   & 38,376,800 & 2,285,900 & Encapsulation performance with shared secret derivation. \\
-\hline
-kyber\_decaps   & 39,060,800 & 2,921,800 & Decapsulation latency and handshake completion time. \\
-\hline
-\end{tabular}
-\caption{Median CPU cycles for Kyber operations with concise context to fit page width.}
-\label{tab:kyber_median_cycles}
-\end{table}
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=10pt,
+    width=14cm,
+    height=8cm,
+    ymode=log,
+    log origin=infty,
+    ymin=1e5,
+    ymax=1e9,
+    ytick={1e5,1e6,1e7,1e8,1e9},
+    yticklabels={10$^5$,10$^6$,10$^7$,10$^8$,10$^9$},
+    ylabel={Median CPU Cycles (log scale)},
+    symbolic x coords={
+        indcpa\_keypair,
+        indcpa\_enc,
+        indcpa\_dec,
+        kyber\_keypair,
+        kyber\_encaps,
+        kyber\_decaps
+    },
+    xtick=data,
+    x tick label style={rotate=30, anchor=east},
+    enlarge x limits=0.05,
+    ymajorgrids,
+    grid style=dashed,
+    legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1},
+    nodes near coords,
+    every node near coord/.append style={font=\scriptsize, rotate=90, anchor=west}
+]
+% Parallel values
+\addplot[pattern=north east lines,pattern color=black] coordinates {
+    (indcpa\_keypair,1870200)
+    (indcpa\_enc,38376800)
+    (indcpa\_dec,39060800)
+    (kyber\_keypair,1870200)
+    (kyber\_encaps,38376800)
+    (kyber\_decaps,39060800)
+};
+% Sequential values
+\addplot[pattern=dots,pattern color=black] coordinates {
+    (indcpa\_keypair,1702800)
+    (indcpa\_enc,2174400)
+    (indcpa\_dec,618400)
+    (kyber\_keypair,1800300)
+    (kyber\_encaps,2285900)
+    (kyber\_decaps,2921800)
+};
+
+\legend{Parallel, Sequential}
+\end{axis}
+\end{tikzpicture}
+\caption{Median CPU cycles for Kyber operations in parallel vs sequential modes, plotted on a logarithmic scale to make smaller values visible alongside large ones.}
+\label{fig:kyber_median_cycles_chart_log}
+\end{figure}
+
 
 
 Across all three workloads, cache behavior was uniformly stable. Monitoring via QEMU’s cache plugin confirmed low instruction and data cache miss rates, consistent with compact memory footprints and tight loop-local access patterns. Instruction cache performance benefited from small binary sizes and the absence of dynamic control flow, while data cache pressure remained minimal due to statically sized inputs and short-lived stack allocations. These characteristics consistently indicate compute-bound, not memory-bound, behavior in the native case.
@@ -237,30 +273,176 @@ All benchmarks were initially executed ten times sequentially under enclave prot
 
 Corresponding wall-clock times for these Kyber enclave runs averaged approximately 29.3 seconds, significantly exceeding native baselines of 10--11 seconds, primarily due to cryptographic memory encryption and integrity checks that increase the cost of each memory access and instruction fetch.
 
-%\begin{figure}[h]
-%    \centering
-%    \includegraphics[width=0.7\textwidth]{figures/wall_clock_comparison.pdf}
-%    \caption{Wall-clock execution time across benchmarks (native vs enclave, averaged over 10 runs).}
-%    \label{fig:wall_clock}
-%\end{figure}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+
+% --- Left axis: Times + slowdown factors ---
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=120,
+    ylabel={Time (s) / Slowdown ×},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.35,
+    ymajorgrids,
+    grid style=dashed,
+    legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
+    axis y line*=left,
+    axis x line*=bottom,
+    bar shift=-6pt
+]
+\addplot[pattern=north east lines,pattern color=black] 
+    coordinates {(Kyber,10.65) (Dhrystone,15.3) (CoreMark,101)};
+\addplot[pattern=dots,pattern color=black] 
+    coordinates {(Kyber,29.3) (Dhrystone,24.7) (CoreMark,107)};
+\addplot[pattern=crosshatch,pattern color=black] 
+    coordinates {(Kyber,2.6) (Dhrystone,1.6) (CoreMark,1.05)};
+\legend{Native time (s), Enclave time (s), Slowdown ×}
+\end{axis}
+
+% --- Right axis: Context switches ---
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=70000,
+    ylabel={Involuntary Context Switches},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.35,
+    hide x axis,
+    axis y line*=right,
+    axis x line=none,
+    bar shift=10pt
+]
+\addplot[pattern=horizontal lines,pattern color=black] 
+    coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
+\legend{Involuntary CS}
+\end{axis}
+
+\end{tikzpicture}
+\caption{Native vs enclave performance: absolute times, slowdown factors (left axis), and involuntary context switches (right axis).}
+\end{figure}
 
 Memory footprint across enclave runs remained tightly constrained near 10~KB RSS, mirroring native conditions. Page faults were minimal, with typically one minor page fault and zero major faults per run, indicating effective enclave memory management without paging overhead.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.75\linewidth]{figures/enclave_memory_pagefaults.png}
-%   \caption{Resident Set Size (RSS) memory usage and page fault counts during Kyber enclave runs, showing stable memory consumption and minimal paging overhead.}
-%   \label{fig:memory_pagefaults}
-% \end{figure}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=12pt,
+    width=12cm,
+    height=7cm,
+    ymin=0,
+    ylabel={Value},
+    symbolic x coords={RSS\ (KB), Minor\ PF, Major\ PF},
+    xtick=data,
+    enlarge x limits=0.25,
+    ymajorgrids,
+    grid style=dashed,
+    legend style={at={(0.5,-0.18)},anchor=north,legend columns=-1}
+]
+% Native values
+\addplot[pattern=north east lines,pattern color=black] coordinates
+    {(RSS\ (KB),10) (Minor\ PF,1) (Major\ PF,0)};
+% Enclave values
+\addplot[pattern=dots,pattern color=black] coordinates
+    {(RSS\ (KB),10) (Minor\ PF,1) (Major\ PF,0)};
+
+\legend{Native, Enclave}
+\end{axis}
+\end{tikzpicture}
+\caption{Kyber benchmark: memory usage (RSS) and page fault counts for native vs enclave execution.}
+\label{fig:memory_pagefaults_chart}
+\end{figure}
+
+
 
 A notable system-level overhead manifested in the form of a dramatic increase in involuntary context switches—approximately 66,000 per run, nearly two orders of magnitude above the roughly 350 switches observed natively. This surge likely reflects enclave runtime activities such as page re-encryption cycles, secure interrupt handling, and frequent enclave scheduler invocations. While these involuntary context switches contribute to wall-clock time variability, user-mode CPU time remained dominant (over 95\% of total CPU time), confirming that computation remains primarily enclave-resident and compute-bound.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.75\linewidth]{figures/context_switches_comparison.png}
-%   \caption{Involuntary context switches during native versus enclave execution, highlighting a nearly 200$\times$ increase under enclave protection.}
-%   \label{fig:context_switches}
-% \end{figure}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+% Left axis: CPU time percentages
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=100,
+    ylabel={CPU Time (\%)},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.25,
+    ymajorgrids,
+    grid style=dashed,
+    legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
+    axis y line*=left,
+    axis x line*=bottom
+]
+% User CPU% Native
+\addplot[pattern=dots,pattern color=black] coordinates
+    {(Kyber,95) (Dhrystone,95) (CoreMark,95)};
+% User CPU% Enclave
+\addplot[pattern=dots,pattern color=black!50] coordinates
+    {(Kyber,95) (Dhrystone,95) (CoreMark,95)};
+% System CPU% Native
+\addplot[pattern=crosshatch,pattern color=black] coordinates
+    {(Kyber,5) (Dhrystone,5) (CoreMark,5)};
+% System CPU% Enclave
+\addplot[pattern=crosshatch,pattern color=black!50] coordinates
+    {(Kyber,5) (Dhrystone,5) (CoreMark,5)};
+
+\legend{
+    User CPU\% (Native),
+    User CPU\% (Enclave),
+    System CPU\% (Native),
+    System CPU\% (Enclave),
+    Ctx Switches (Native),
+    Ctx Switches (Enclave)
+}
+\end{axis}
+
+% Right axis: Context switches
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=70000,
+    ylabel={Involuntary Context Switches},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.25,
+    hide x axis,
+    axis y line*=right,
+    axis x line=none
+]
+% Context switches Native
+\addplot[pattern=north east lines,pattern color=black] coordinates
+    {(Kyber,350) (Dhrystone,350) (CoreMark,350)};
+% Context switches Enclave
+\addplot[pattern=north east lines,pattern color=black!50] coordinates
+    {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
+\end{axis}
+
+\end{tikzpicture}
+\caption{Native vs enclave execution: involuntary context switches (right axis) and CPU time percentages (left axis).}
+\label{fig:context_switches_dualaxis}
+\end{figure}
+
+
 
 The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
 
@@ -304,22 +486,74 @@ Memory behavior across enclave runs remained remarkably stable and comparable to
 
 These observations are summarized in Table~\ref{tab:sensitivity-overheads}, which compares native and enclave wall-clock times, overhead factors, and context switch counts across all three benchmarks. Figure~\ref{fig:workload_overhead} visually contrasts the wall-clock overhead imposed by enclave execution, highlighting Kyber’s pronounced sensitivity and CoreMark’s relative resilience.
 
-\begin{table}[h]
+\begin{figure}[h]
 \centering
-\begin{tabular}{|l|c|c|c|p{3.5cm}|}
-\hline
-\textbf{Benchmark} & \textbf{Native Time (s)} & \textbf{Enclave Time (s)} & \textbf{Overhead Factor} & \textbf{Involuntary CS} \\
-\hline
-Kyber     & 10.7   & 29.2   & 2.73$\times$  & 66,000 \\
-\hline
-Dhrystone & 15.3   & 24.7   & 1.61$\times$  & 66,000 \\
-\hline
-CoreMark  & 101.5  & 107.3  & 1.06$\times$  & 66,000 \\
-\hline
-\end{tabular}
-\caption{Enclave Execution Sensitivity Across Workloads. Overhead factors indicate slowdown relative to native execution.}
-\label{tab:sensitivity-overheads}
-\end{table}
+\begin{tikzpicture}
+
+% --- Left axis: Execution times ---
+\begin{axis}[
+    ybar,
+    bar width=6pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=120,
+    ylabel={Execution Time (s)},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.4,
+    ymajorgrids,
+    grid style=dashed,
+    legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
+    axis y line*=left,
+    axis x line*=bottom,
+    bar shift=-4pt
+]
+\addplot[pattern=dots,pattern color=black] 
+    coordinates {(Kyber,10.7) (Dhrystone,15.3) (CoreMark,101.5)};
+\addplot[pattern=dots,pattern color=black!50] 
+    coordinates {(Kyber,29.2) (Dhrystone,24.7) (CoreMark,107.3)};
+\legend{Native Time, Enclave Time} % only the left-axis series here
+\end{axis}
+
+% --- Right axis: Context switches ---
+\begin{axis}[
+    ybar,
+    bar width=6pt,
+    width=14cm,
+    height=8cm,
+    ymin=0,
+    ymax=70000,
+    ylabel={Involuntary Context Switches},
+    symbolic x coords={Kyber,Dhrystone,CoreMark},
+    xtick=data,
+    enlarge x limits=0.4,
+    hide x axis,
+    axis y line*=right,
+    axis x line=none,
+    bar shift=10pt
+]
+\addplot[pattern=north east lines,pattern color=black] 
+    coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
+\legend{Involuntary CS} % right-axis series legend
+\end{axis}
+
+% --- Overhead factor labels ---
+\begin{axis}[
+    hide axis,
+    width=14cm,
+    height=8cm,
+    symbolic x coords={Kyber,Dhrystone,CoreMark}
+]
+\node[font=\small, anchor=south] at (axis cs:Kyber,29.2) {2.73$\times$};
+\node[font=\small, anchor=south] at (axis cs:Dhrystone,24.7) {1.61$\times$};
+\node[font=\small, anchor=south] at (axis cs:CoreMark,107.3) {1.06$\times$};
+\end{axis}
+
+\end{tikzpicture}
+\caption{Native vs enclave execution times (left axis) and involuntary context switches (right axis), with overhead factors above Enclave bars}
+\label{fig:sensitivity-overheads-chart}
+\end{figure}
 
 % \begin{figure}[htbp]
 %   \centering
