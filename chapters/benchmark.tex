@@ -21,175 +21,166 @@ Each benchmark was executed both \emph{sequentially} and \emph{in parallel}, ten
 % ------------------------
 % Wall-clock time figures
 % ------------------------
-Figure~\ref{fig:wallclock_coremark} reports CoreMark's performance profile using the latest data from Run~10 of both sequential and parallel execution modes. Execution time remained consistent, with the sequential case averaging approximately 101.17 seconds of wall-clock time and the parallel case averaging around 103.37 seconds. This corresponds to an effective throughput of about 988.4 iterations per second for the sequential run and 967.4 iterations per second for the parallel run. User-mode CPU time dominated in both cases (101.20 seconds sequential, 103.39 seconds parallel), accounting for over 99.9\% of total CPU time. System-mode CPU time was negligible (under 0.03 seconds), confirming that the workload’s operational footprint is almost entirely in user space with minimal reliance on system calls or kernel transitions.
+Figure~\ref{fig:coremark_perf_comparison_log} reports CoreMark's performance profile using the latest data from Run~10 of both sequential and parallel execution modes. Execution time remained consistent, with the sequential case averaging approximately 101.17 seconds of wall-clock time and the parallel case averaging around 103.37 seconds. This corresponds to an effective throughput of about 988.4 iterations per second for the sequential run and 967.4 iterations per second for the parallel run. User-mode CPU time dominated in both cases (101.20 seconds sequential, 103.39 seconds parallel), accounting for over 99.9\% of total CPU time. System-mode CPU time was negligible (under 0.03 seconds), confirming that the workload’s operational footprint is almost entirely in user space with minimal reliance on system calls or kernel transitions.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/wallclock_coremark.png}
-%   \caption{CoreMark wall-clock time in native sequential and parallel runs.}
-%   \label{fig:wallclock_coremark}
-% \end{figure}
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Total\ Time,
+                Iterations/Sec,
+                User\ CPU\ Time,
+                System\ CPU\ Time,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1}
+        ]
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Total\ Time,103.24)
+            (Iterations/Sec,968.64)
+            (User\ CPU\ Time,103.26)
+            (System\ CPU\ Time,0.02)
+            (Max\ RSS,1712.00)
+            (Minor\ PF,83.60)
+            (Major\ PF,0.20)
+            (Voluntary\ CS,0.70)
+            (Involuntary\ CS,25815.10)
+        };
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Total\ Time,101.11)
+            (Iterations/Sec,989.00)
+            (User\ CPU\ Time,101.14)
+            (System\ CPU\ Time,0.01)
+            (Max\ RSS,1691.60)
+            (Minor\ PF,83.60)
+            (Major\ PF,0.20)
+            (Voluntary\ CS,0.90)
+            (Involuntary\ CS,350.40)
+        };
+        \legend{Run10, Run10\_SEQ}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log‑scale comparison of all key metrics for CoreMark 64M\_1Core: Run10 vs Run10\_SEQ.}
+        \label{fig:coremark_perf_comparison_log}
+    \end{subfigure}
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/wallclock_dhrystone.png}
-%   \caption{Dhrystone wall-clock time in native sequential and parallel runs.}
-%   \label{fig:wallclock_dhrystone}
-% \end{figure}
+    \vspace{1.2cm}
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/wallclock_kyber.png}
-%   \caption{Kyber wall-clock time in native sequential and parallel runs.}
-%   \label{fig:wallclock_kyber}
-% \end{figure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Elapsed\ Time,
+                User\ CPU\ Time,
+                System\ CPU\ Time,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS,
+                \(\mu s\)/Run,
+                DPS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1}
+        ]
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Elapsed\ Time,103.74)
+            (User\ CPU\ Time,11.04)
+            (System\ CPU\ Time,0.02)
+            (Max\ RSS,1700.00)
+            (Minor\ PF,89.60)
+            (Major\ PF,0.30)
+            (Voluntary\ CS,0.70)
+            (Involuntary\ CS,2583.60)
+            (\(\mu s\)/Run,10.10)
+            (DPS,96478.10)
+        };
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Elapsed\ Time,10.02)
+            (User\ CPU\ Time,10.03)
+            (System\ CPU\ Time,0.01)
+            (Max\ RSS,1700.00)
+            (Minor\ PF,88.60)
+            (Major\ PF,0.10)
+            (Voluntary\ CS,0.80)
+            (Involuntary\ CS,44.00)
+            (\(\mu s\)/Run,0.50)
+            (DPS,998646.70)
+        };
+        \legend{Run10, Run10\_SEQ}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log‑scale comparison of all key metrics for Dhrystone 64M\_1Core: Run10 vs Run10\_SEQ.}
+        \label{fig:dhrystone_perf_comparison_log}
+    \end{subfigure}
+    \caption{Comparison of CoreMark and Dhrystone benchmark performance metrics (log-scale) under Run10 and Run10\_SEQ modes.}
+\end{figure}
 
 % ------------------------
 % CPU time figures
 % ------------------------
 Memory behavior was stable and well within constraints, with peak resident set size (RSS) at 1692~KB for the sequential run and 1712~KB for the parallel run—both well below the 64~MB memory cap. This indicates that the benchmark’s data and code footprint remained fully cacheable, without triggering paging or dynamic memory expansion. Minor page faults were low and consistent (82--84 for sequential, 82--85 for parallel), though a single major page fault was observed in the parallel run and two in the sequential run, suggesting rare but possible demand paging during lazy allocation. Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case. This disparity reflects a significantly higher degree of preemption or timer interrupts in the parallel workload environment.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/cputime_coremark.png}
-%   \caption{CoreMark CPU time (user and system) in native sequential and parallel runs.}
-%   \label{fig:cputime_coremark}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/cputime_dhrystone.png}
-%   \caption{Dhrystone CPU time (user and system) in native sequential and parallel runs.}
-%   \label{fig:cputime_dhrystone}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/cputime_kyber.png}
-%   \caption{Kyber CPU time (user and system) in native sequential and parallel runs.}
-%   \label{fig:cputime_kyber}
-% \end{figure}
-
 % ------------------------
 % Throughput figures
 % ------------------------
-Figure~\ref{fig:dhrystone_native} presents detailed results from the Dhrystone benchmark under native conditions. The sequential runs exhibited an average elapsed time of approximately 101.2 seconds per run, with user-mode CPU time closely matching this figure, indicating near-total CPU utilization. In contrast, the parallel merged runs completed in roughly 103.4 seconds, with user CPU time again nearly equal to wall-clock time. Throughput, measured in Dhrystone operations per second (DPS), was higher in the sequential case—approximately 988.4~DPS versus 967.4~DPS in the parallel configuration—reflecting slight scheduling overhead from virtual concurrency under QEMU.
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/throughput_coremark.png}
-%   \caption{CoreMark throughput in native sequential and parallel runs.}
-%   \label{fig:throughput_coremark}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/throughput_dhrystone.png}
-%   \caption{Dhrystone throughput in native sequential and parallel runs.}
-%   \label{fig:throughput_dhrystone}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/throughput_kyber.png}
-%   \caption{Kyber throughput in native sequential and parallel runs.}
-%   \label{fig:throughput_kyber}
-% \end{figure}
+Figure~\ref{fig:dhrystone_perf_comparison_log} presents detailed results from the Dhrystone benchmark under native conditions. The sequential runs exhibited an average elapsed time of approximately 101.2 seconds per run, with user-mode CPU time closely matching this figure, indicating near-total CPU utilization. In contrast, the parallel merged runs completed in roughly 103.4 seconds, with user CPU time again nearly equal to wall-clock time. Throughput, measured in Dhrystone operations per second (DPS), was higher in the sequential case—approximately 988.4~DPS versus 967.4~DPS in the parallel configuration—reflecting slight scheduling overhead from virtual concurrency under QEMU.
 
 % ------------------------
 % Memory usage figures
 % ------------------------
 Memory footprint remained small (peak RSS ~1.7~MB) and stable, with 82--86 minor page faults per run.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_coremark.png}
-%   \caption{CoreMark resident set size (RSS) in native sequential and parallel runs.}
-%   \label{fig:memory_rss_coremark}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_dhrystone.png}
-%   \caption{Dhrystone resident set size (RSS) in native sequential and parallel runs.}
-%   \label{fig:memory_rss_dhrystone}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/memory_rss_kyber.png}
-%   \caption{Kyber resident set size (RSS) in native sequential and parallel runs.}
-%   \label{fig:memory_rss_kyber}
-% \end{figure}
-
-% ------------------------
-% Page faults figures
-% ------------------------
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_coremark.png}
-%   \caption{CoreMark minor and major page faults in native sequential and parallel runs.}
-%   \label{fig:pagefaults_coremark}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_dhrystone.png}
-%   \caption{Dhrystone minor and major page faults in native sequential and parallel runs.}
-%   \label{fig:pagefaults_dhrystone}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/pagefaults_kyber.png}
-%   \caption{Kyber minor and major page faults in native sequential and parallel runs.}
-%   \label{fig:pagefaults_kyber}
-% \end{figure}
-
 % ------------------------
 % Context switches figures
 % ------------------------
 Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case.
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_coremark.png}
-%   \caption{CoreMark voluntary and involuntary context switches in native sequential and parallel runs.}
-%   \label{fig:contextswitches_coremark}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_dhrystone.png}
-%   \caption{Dhrystone voluntary and involuntary context switches in native sequential and parallel runs.}
-%   \label{fig:contextswitches_dhrystone}
-% \end{figure}
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/contextswitches_kyber.png}
-%   \caption{Kyber voluntary and involuntary context switches in native sequential and parallel runs.}
-%   \label{fig:contextswitches_kyber}
-% \end{figure}
-
 % ------------------------
 % Cycle counts figures (Kyber only)
 % ------------------------
-Kyber performance was evaluated using the official \texttt{test\_speed512} binary from the reference implementation's \texttt{ref/} directory.\footnote{See \url{https://github.com/pq-crystals/kyber}. The \texttt{test\_speed512} utility executes keypair generation, encapsulation, and decapsulation 1000 times each and reports cycle counts using architecture-level counters emulated under QEMU.} Table~\ref{tab:kyber_run10_cycles} summarizes the median cycle counts for each operation, while Figure~\ref{fig:kyber_native_cycles} compares sequential and parallel execution.
+Kyber performance was evaluated using the official \texttt{test\_speed512} binary from the reference implementation's \texttt{ref/} directory.\footnote{See \url{https://github.com/pq-crystals/kyber}. The \texttt{test\_speed512} tool benchmarks key operations using emulated cycle counters in QEMU.} Figure~\ref{fig:kyber_median_cycles_chart_log} presents the median cycle counts for each cryptographic operation, comparing both sequential and parallel enclave execution.
 
 % \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/cyclecounts_kyber.png}
-%   \caption{Kyber median cycle counts for keypair generation, encapsulation, and decapsulation in native sequential and parallel runs.}
-%   \label{fig:kyber_native_cycles}
+%     \centering
+%     \includegraphics[width=0.9\linewidth]{figures/kyber_64M_1Core.pdf}
+%     \caption{Comparison of Kyber Median CPU Cycles per Operation: Sequential Single-Threaded (\texttt{run10\_SEQ}) vs Parallel Merged (\texttt{run10}) Execution (10 Runs)}
+%     \label{fig:kyber_native_cycles}
 % \end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\linewidth]{figures/kyber_64M_1Core.pdf}
-    \caption{Comparison of Kyber Median CPU Cycles per Operation: Sequential Single-Threaded (\texttt{run10\_SEQ}) vs Parallel Merged (\texttt{run10}) Execution (10 Runs)}
-    \label{fig:kyber_native_cycles}
-\end{figure}
 
 All cryptographic operations executed entirely in user space, without invoking privileged instructions or incurring system-level overhead. Memory footprint remained minimal (peak RSS ~10~KB), with only a single minor page fault observed across all runs.
 
@@ -251,8 +242,6 @@ All cryptographic operations executed entirely in user space, without invoking p
 \label{fig:kyber_median_cycles_chart_log}
 \end{figure}
 
-
-
 Across all three workloads, cache behavior was uniformly stable. Monitoring via QEMU’s cache plugin confirmed low instruction and data cache miss rates, consistent with compact memory footprints and tight loop-local access patterns. Instruction cache performance benefited from small binary sizes and the absence of dynamic control flow, while data cache pressure remained minimal due to statically sized inputs and short-lived stack allocations. These characteristics consistently indicate compute-bound, not memory-bound, behavior in the native case.
 
 Together, these results confirm that the native execution environment offers a low-noise, deterministic baseline across benchmarks. Variability was minimal, CPU time aligned closely with wall-clock time, memory remained well-bounded, and system-level interference was negligible—making this configuration ideal for isolating performance effects introduced in subsequent secure or enclave-based execution modes.
@@ -262,79 +251,78 @@ Together, these results confirm that the native execution environment offers a l
 
 Building on the native baseline characterization, this section analyzes the performance impacts and system overheads observed when executing representative workloads—Kyber, Dhrystone, and CoreMark—within a secure enclave environment. The experiments were conducted on the identical Low-End Baseline platform (64~MB RAM, single in-order RISC-V core), isolating overheads introduced exclusively by enclave security mechanisms such as memory encryption, integrity verification, and enclave runtime management.
 
-All benchmarks were initially executed ten times sequentially under enclave protection to establish a direct, low-variability comparison against native runs. The Kyber \texttt{kyber\_decaps} operation exhibited median CPU cycle counts consistently around 3.5 million cycles per run (e.g., 3,505,686 cycles in Run~1), approximately 1.2$\times$ the native sequential baseline of about 2.9 million cycles (see Table~\ref{tab:kyber_median_cycles}). Average cycles were slightly higher, around 3.53 million, reflecting stable and repeatable enclave performance. Other key Kyber operations, such as \texttt{indcpa\_keypair} and \texttt{indcpa\_enc}, showed median cycle counts near 1.74 million and 2.62 million cycles respectively, consistent across runs.
+All benchmarks were initially executed ten times sequentially under enclave protection to establish a direct, low-variability comparison against native runs. The Kyber \texttt{kyber\_decaps} operation exhibited median CPU cycle counts consistently around 3.5 million cycles per run (e.g., 3,505,686 cycles in Run~1), approximately 1.2$\times$ the native sequential baseline of about 2.9 million cycles (see Figure~\ref{fig:kyber_median_cycles_chart_log}). Average cycles were slightly higher, around 3.53 million, reflecting stable and repeatable enclave performance. Other key Kyber operations, such as \texttt{indcpa\_keypair} and \texttt{indcpa\_enc}, showed median cycle counts near 1.74 million and 2.62 million cycles respectively, consistent across runs.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.7\textwidth]{figures/kyber_64M_1Core_comparison.pdf}
-    \caption{Cycle count comparison for Kyber operations (native vs enclave). Error bars reflect variation over 10 runs.}
-    \label{fig:kyber_cycles}
-\end{figure}
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.7\textwidth]{figures/kyber_64M_1Core_comparison.pdf}
+%     \caption{Cycle count comparison for Kyber operations (native vs enclave). Error bars reflect variation over 10 runs.}
+%     \label{fig:kyber_cycles}
+% \end{figure}
 
 Corresponding wall-clock times for these Kyber enclave runs averaged approximately 29.3 seconds, significantly exceeding native baselines of 10--11 seconds, primarily due to cryptographic memory encryption and integrity checks that increase the cost of each memory access and instruction fetch.
 
+% \begin{figure}[h]
+% \centering
+% \begin{tikzpicture}
 
-\begin{figure}[h]
-\centering
-\begin{tikzpicture}
+% % --- Left axis: Times + slowdown factors ---
+% \begin{axis}[
+%     ybar,
+%     bar width=8pt,
+%     width=14cm,
+%     height=8cm,
+%     ymin=0,
+%     ymax=120,
+%     ylabel={Time (s) / Slowdown ×},
+%     symbolic x coords={Kyber,Dhrystone,CoreMark},
+%     xtick=data,
+%     enlarge x limits=0.35,
+%     ymajorgrids,
+%     grid style=dashed,
+%     legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
+%     axis y line*=left,
+%     axis x line*=bottom,
+%     bar shift=-6pt
+% ]
+% \addplot[pattern=north east lines,pattern color=black] 
+%     coordinates {(Kyber,10.65) (Dhrystone,15.3) (CoreMark,101)};
+% \addplot[pattern=dots,pattern color=black] 
+%     coordinates {(Kyber,29.3) (Dhrystone,24.7) (CoreMark,107)};
+% \addplot[pattern=crosshatch,pattern color=black] 
+%     coordinates {(Kyber,2.6) (Dhrystone,1.6) (CoreMark,1.05)};
+% \legend{Native time (s), Enclave time (s), Slowdown ×}
+% \end{axis}
 
-% --- Left axis: Times + slowdown factors ---
-\begin{axis}[
-    ybar,
-    bar width=8pt,
-    width=14cm,
-    height=8cm,
-    ymin=0,
-    ymax=120,
-    ylabel={Time (s) / Slowdown ×},
-    symbolic x coords={Kyber,Dhrystone,CoreMark},
-    xtick=data,
-    enlarge x limits=0.35,
-    ymajorgrids,
-    grid style=dashed,
-    legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
-    axis y line*=left,
-    axis x line*=bottom,
-    bar shift=-6pt
-]
-\addplot[pattern=north east lines,pattern color=black] 
-    coordinates {(Kyber,10.65) (Dhrystone,15.3) (CoreMark,101)};
-\addplot[pattern=dots,pattern color=black] 
-    coordinates {(Kyber,29.3) (Dhrystone,24.7) (CoreMark,107)};
-\addplot[pattern=crosshatch,pattern color=black] 
-    coordinates {(Kyber,2.6) (Dhrystone,1.6) (CoreMark,1.05)};
-\legend{Native time (s), Enclave time (s), Slowdown ×}
-\end{axis}
+% % --- Right axis: Context switches ---
+% \begin{axis}[
+%     ybar,
+%     bar width=8pt,
+%     width=14cm,
+%     height=8cm,
+%     ymin=0,
+%     ymax=70000,
+%     ylabel={Involuntary Context Switches},
+%     symbolic x coords={Kyber,Dhrystone,CoreMark},
+%     xtick=data,
+%     enlarge x limits=0.35,
+%     hide x axis,
+%     axis y line*=right,
+%     axis x line=none,
+%     bar shift=10pt
+% ]
+% \addplot[pattern=horizontal lines,pattern color=black] 
+%     coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
+% \legend{Involuntary CS}
+% \end{axis}
 
-% --- Right axis: Context switches ---
-\begin{axis}[
-    ybar,
-    bar width=8pt,
-    width=14cm,
-    height=8cm,
-    ymin=0,
-    ymax=70000,
-    ylabel={Involuntary Context Switches},
-    symbolic x coords={Kyber,Dhrystone,CoreMark},
-    xtick=data,
-    enlarge x limits=0.35,
-    hide x axis,
-    axis y line*=right,
-    axis x line=none,
-    bar shift=10pt
-]
-\addplot[pattern=horizontal lines,pattern color=black] 
-    coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
-\legend{Involuntary CS}
-\end{axis}
-
-\end{tikzpicture}
-\caption{Native vs enclave performance: absolute times, slowdown factors (left axis), and involuntary context switches (right axis).}
-\end{figure}
+% \end{tikzpicture}
+% \caption{Native vs enclave performance: absolute times, slowdown factors (left axis), and involuntary context switches (right axis).}
+% \end{figure}
 
 Memory footprint across enclave runs remained tightly constrained near 10~KB RSS, mirroring native conditions. Page faults were minimal, with typically one minor page fault and zero major faults per run, indicating effective enclave memory management without paging overhead.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -365,11 +353,9 @@ Memory footprint across enclave runs remained tightly constrained near 10~KB RSS
 \label{fig:memory_pagefaults_chart}
 \end{figure}
 
-
-
 A notable system-level overhead manifested in the form of a dramatic increase in involuntary context switches—approximately 66,000 per run, nearly two orders of magnitude above the roughly 350 switches observed natively. This surge likely reflects enclave runtime activities such as page re-encryption cycles, secure interrupt handling, and frequent enclave scheduler invocations. While these involuntary context switches contribute to wall-clock time variability, user-mode CPU time remained dominant (over 95\% of total CPU time), confirming that computation remains primarily enclave-resident and compute-bound.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 % Left axis: CPU time percentages
@@ -388,17 +374,27 @@ A notable system-level overhead manifested in the form of a dramatic increase in
     grid style=dashed,
     legend style={at={(0.5,-0.18)},anchor=north,legend columns=3},
     axis y line*=left,
-    axis x line*=bottom
+    axis x line*=bottom,
+    nodes near coords,
+    every node near coord/.append style={
+        font=\small,
+        anchor=west,
+        rotate=90
+    }
 ]
+
 % User CPU% Native
 \addplot[pattern=dots,pattern color=black] coordinates
     {(Kyber,95) (Dhrystone,95) (CoreMark,95)};
+
 % User CPU% Enclave
 \addplot[pattern=dots,pattern color=black!50] coordinates
     {(Kyber,95) (Dhrystone,95) (CoreMark,95)};
+
 % System CPU% Native
 \addplot[pattern=crosshatch,pattern color=black] coordinates
     {(Kyber,5) (Dhrystone,5) (CoreMark,5)};
+
 % System CPU% Enclave
 \addplot[pattern=crosshatch,pattern color=black!50] coordinates
     {(Kyber,5) (Dhrystone,5) (CoreMark,5)};
@@ -427,22 +423,29 @@ A notable system-level overhead manifested in the form of a dramatic increase in
     enlarge x limits=0.25,
     hide x axis,
     axis y line*=right,
-    axis x line=none
+    axis x line=none,
+    nodes near coords,
+    every node near coord/.append style={
+        font=\small,
+        anchor=west,
+        rotate=90
+    }
 ]
+
 % Context switches Native
 \addplot[pattern=north east lines,pattern color=black] coordinates
     {(Kyber,350) (Dhrystone,350) (CoreMark,350)};
+
 % Context switches Enclave
 \addplot[pattern=north east lines,pattern color=black!50] coordinates
     {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
+
 \end{axis}
 
 \end{tikzpicture}
 \caption{Native vs enclave execution: involuntary context switches (right axis) and CPU time percentages (left axis).}
 \label{fig:context_switches_dualaxis}
 \end{figure}
-
-
 
 The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
 
@@ -465,28 +468,30 @@ These results underscore a fundamental trade-off in enclave execution scalabilit
 
 Enclave execution imposes moderate but consistent performance overheads relative to native runs, with cycle counts and execution times increasing approximately 20--60\%. Memory usage remains tightly bounded, and paging is effectively avoided. The most substantial system-level overhead is the marked increase in involuntary context switches during enclave operation, which affects timing predictability but not computational correctness.
 
-These findings confirm that secure enclaves can sustain a wide range of computational workloads with predictable overheads and stable memory behavior, while also revealing important hardware-imposed concurrency limitations. The detailed performance and system metric breakdown presented here forms a critical foundation for future optimization and hardware enhancement efforts targeting secure enclave scalability and efficiency.
+In summary, enclave execution on this low-end RISC-V platform introduces moderate but consistent overheads, primarily in the form of increased runtime and context switching, without significant memory bloat or paging pressure. While sequential workloads complete reliably, attempts at concurrent enclave execution expose hard architectural limits rooted in PMP region constraints. These results highlight the current scalability boundaries of enclave systems and motivate the need for both software- and hardware-level support to unlock robust parallelism under secure execution.
 
-\section{Workload Sensitivity Analysis (Kyber vs CoreMark vs Dhrystone)}
+\section{Comparative Overhead Metrics Across Workloads}
 \label{sec:workload-sensitivity}
 
-This section presents a comparative analysis of enclave-induced overheads across three fundamentally different workload types: cryptographic (Kyber), general-purpose embedded (CoreMark), and integer-heavy synthetic benchmarks (Dhrystone). The goal is to understand how diverse computational patterns react to the constraints and runtime characteristics of trusted enclave execution, particularly under a constrained hardware configuration.
+This section presents a comparative evaluation of the performance overheads introduced by secure enclave execution across three representative workloads: the Kyber post-quantum cryptographic scheme, the Dhrystone integer benchmark, and the CoreMark embedded systems benchmark. These workloads were selected for their diversity in computational characteristics—ranging from cryptography-heavy operations with irregular memory access patterns, to synthetic instruction-driven integer arithmetic, and finally to mixed workload execution involving control logic, arithmetic, and memory access. By comparing enclave and native performance across these distinct benchmarks, we aim to empirically characterize how enclave runtime behavior and hardware-level protections interact with different application classes.
 
-All evaluations were performed on a minimal RISC-V platform comprising a single in-order core and 64~MB of RAM, consistent with prior sections. Each workload was executed both natively and within the secure enclave environment, under identical operating conditions. Enclave runs were repeated ten times sequentially to reduce interference, and measurements were recorded using Linux time utilities and cycle counters embedded in the enclave runtime. System-level statistics, such as context switches, resident set size (RSS), and page fault counts, were also gathered to provide a holistic view of the overheads.
+All experiments were conducted on the same low-end RISC-V platform: a single in-order core with 64~MB of RAM and no hardware acceleration for encryption or virtualization. Both enclave and native executions used the same compiler flags, runtime configurations, and benchmarking scripts. Each benchmark was run ten times sequentially in both native and enclave modes to minimize measurement noise and provide stable median and average performance statistics. Measurements included CPU cycle counts, wall-clock time, throughput (where applicable), context switches, and memory footprint.
 
-Among the three workloads, Kyber proved to be the most sensitive to enclave-related performance impacts. The median number of CPU cycles for its \texttt{kyber\_decaps} operation increased from approximately 2.9 million in the native case to over 3.5 million when executed inside the enclave—a roughly 1.2$\times$ increase. However, this difference was magnified in terms of wall-clock time: the native execution completed in approximately 10.7 seconds, whereas the enclave version averaged 29.2 seconds, representing a 2.7$\times$ slowdown. This discrepancy suggests that memory encryption and integrity verification add nontrivial latency per memory access, disproportionately affecting workloads with dense memory usage or pointer-heavy data structures, which are characteristic of lattice-based cryptographic primitives like Kyber.
+Among the workloads tested, Kyber was the most sensitive to enclave-related overhead. In native execution, the \texttt{kyber\_decaps} operation completed in a median of approximately 2.9 million cycles, corresponding to a wall-clock time of around 10.7 seconds. However, under enclave execution, the same operation required over 3.5 million cycles and a wall-clock time of 29.2 seconds, reflecting a 2.73$\times$ increase in observed duration. The increase in cycle count—approximately 20\%—was dwarfed by the nearly 3$\times$ increase in elapsed time, suggesting that the overhead is not merely computational but also systemic. The Kyber implementation is particularly sensitive to memory access latency due to its reliance on large data buffers, frequent pointer dereferencing, and memory-intensive operations such as polynomial multiplication and compression. These characteristics make it acutely vulnerable to the latency overhead introduced by enclave-specific features such as memory encryption and integrity verification, which intercept and transform nearly every memory read and write.
 
-In stark contrast, CoreMark exhibited the least performance degradation under enclave execution. Wall-clock time increased only slightly, from a native average of 101.5 seconds to 107.3 seconds in the enclave, corresponding to a 1.06$\times$ overhead. This minimal slowdown is attributed to CoreMark’s balanced workload structure, combining arithmetic operations, control logic, and memory accesses in a manner that is less sensitive to cryptographic memory protection. CoreMark’s throughput declined modestly, from a native range of 967--988 iterations per second to an enclave-protected range of 919--939, indicating that while overheads exist, they are amortized over the longer duration and lower frequency of secure memory operations.
+By contrast, CoreMark exhibited far greater resilience to enclave-induced slowdown. The native execution time averaged 101.5 seconds, while enclave execution required 107.3 seconds—a modest 1.06$\times$ slowdown. Throughput dropped slightly from a native range of 967--988 iterations per second to an enclave range of 919--939, indicating that while performance was affected, the impact was minimal relative to the workload's duration and structure. This result is consistent with CoreMark’s design as a balanced benchmark that includes control flow, integer operations, and limited memory activity. The longer total runtime may also help amortize fixed enclave setup and teardown costs over a larger instruction volume, dampening the perceived overhead.
 
-Dhrystone occupied a middle ground between Kyber and CoreMark in terms of sensitivity. The wall-clock time for Dhrystone increased from 15.3 seconds natively to 24.7 seconds under enclave protection, yielding an overhead factor of approximately 1.6$\times$. Despite its primary reliance on integer arithmetic and control structures, Dhrystone is sensitive to memory system performance due to its short execution time and tight loops. The secure memory mechanisms in the enclave added consistent latency, resulting in degraded throughput (395,000--408,000 Dhrystone operations per second) when compared to the native baseline of approximately 400,000 DPS. These results confirm that even relatively simple benchmarks experience measurable slowdown under enclave protection, though to a lesser extent than cryptographic workloads.
+Figure~\ref{fig:sensitivity-overheads-chart} summarizes the comparative performance and system-level behavior across all three benchmarks, illustrating the wall-clock time overheads and the uniformly high context switch counts observed during enclave execution.
 
-Across all three benchmarks, system-level metrics revealed a consistent pattern in enclave execution behavior. In particular, the number of involuntary context switches per run consistently exceeded 66,000 for each workload. This value is nearly two orders of magnitude greater than in native runs, where fewer than 400 involuntary context switches were recorded. The uniformity of this value across distinct workloads indicates that the overhead is primarily systemic, driven by the enclave runtime itself rather than specific application behavior. These context switches are likely associated with secure page handling, timer interrupts, and asynchronous enclave runtime maintenance operations. Despite their frequency, the impact appears bounded and does not significantly impair CPU-bound computation, as confirmed by the preservation of user-mode CPU time dominance in all executions.
+Dhrystone, a classic synthetic benchmark designed to test CPU and compiler performance through tight integer loops and frequent procedure calls, showed intermediate sensitivity. Its native execution time averaged 15.3 seconds, while the enclave variant took 24.7 seconds—an overhead factor of approximately 1.61$\times$. Unlike Kyber, Dhrystone does not perform extensive memory operations, but its compact and time-sensitive control loops make it vulnerable to any systemic delay introduced by the enclave runtime, particularly if context switches or instruction fetch penalties are frequent. Its throughput dropped slightly, from around 400,000 operations per second natively to a range between 395,000 and 408,000 in the enclave, with the decline being small but consistent.
 
-Memory behavior across enclave runs remained remarkably stable and comparable to native execution. All workloads reported a resident set size (RSS) close to 10~KB, with no major page faults and at most one minor fault per run. This result indicates that the enclave’s memory allocator and secure paging subsystem are sufficiently robust to handle working sets without inducing swapping or paging penalties, even under constrained RAM conditions.
+Across all three benchmarks, a consistent and striking overhead pattern emerged in the form of involuntary context switches. While native executions averaged fewer than 400 involuntary context switches per run, enclave executions across all workloads exhibited approximately 66,000 context switches per run—an increase of nearly two orders of magnitude. This effect was uniform across workloads, suggesting that it is driven by enclave runtime behavior rather than application-specific activity. Likely contributors include timer interrupts, enclave runtime transitions, secure fault handling, and scheduling-related activity under the Keystone framework. Despite this significant increase, the impact on user-mode computation was minimal in terms of CPU time distribution: more than 95\% of execution time was consistently spent in user space, indicating that the workload remained compute-bound and that the primary cost of context switching was time variability rather than computational interference.
 
-These observations are summarized in Table~\ref{tab:sensitivity-overheads}, which compares native and enclave wall-clock times, overhead factors, and context switch counts across all three benchmarks. Figure~\ref{fig:workload_overhead} visually contrasts the wall-clock overhead imposed by enclave execution, highlighting Kyber’s pronounced sensitivity and CoreMark’s relative resilience.
+Memory usage was consistent and tightly constrained across all runs. All workloads exhibited a resident set size (RSS) of approximately 10~KB in both enclave and native executions, with no major page faults and typically only a single minor page fault per run. This indicates that working sets for each benchmark fit entirely within the secure memory allocation provided by the enclave runtime, and that the paging subsystem—despite operating in a protected mode—remained effective and unobtrusive. This stability is particularly noteworthy given the limited RAM available and the additional overhead of enclave memory isolation mechanisms.
 
-\begin{figure}[h]
+Taken together, the data suggests that the performance impact of enclave execution is highly dependent on the nature of the workload. Kyber, with its pointer-heavy, memory-intensive cryptographic routines, suffers the most under enclave constraints, particularly due to the latency introduced by secure memory mechanisms. Dhrystone, while less affected, still shows measurable sensitivity due to its reliance on fast, loop-driven control structures. CoreMark, in contrast, demonstrates a relatively minor slowdown, benefiting from workload diversity and longer runtime that dilutes per-access costs. At the system level, enclave-induced context switching is a universal phenomenon, independent of workload type, but it does not appear to disrupt user-mode execution beyond timing variability.
+
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 
@@ -509,11 +514,32 @@ These observations are summarized in Table~\ref{tab:sensitivity-overheads}, whic
     axis x line*=bottom,
     bar shift=-4pt
 ]
+% Native time
 \addplot[pattern=dots,pattern color=black] 
     coordinates {(Kyber,10.7) (Dhrystone,15.3) (CoreMark,101.5)};
-\addplot[pattern=dots,pattern color=black!50] 
-    coordinates {(Kyber,29.2) (Dhrystone,24.7) (CoreMark,107.3)};
-\legend{Native Time, Enclave Time} % only the left-axis series here
+
+% Enclave time + overhead factor labels
+\addplot[
+    pattern=dots,
+    pattern color=black!50,
+    nodes near coords,
+    point meta=explicit symbolic,
+    every node near coord/.append style={
+        font=\small,
+        anchor=south,
+        yshift=2pt,
+        fill=white,
+        fill opacity=0.7,
+        text opacity=1
+    }
+] 
+coordinates {
+    (Kyber,29.2)      [2.73$\times$]
+    (Dhrystone,24.7)  [1.61$\times$]
+    (CoreMark,107.3)  [1.06$\times$]
+};
+
+\legend{Native Time, Enclave Time}
 \end{axis}
 
 % --- Right axis: Context switches ---
@@ -535,43 +561,298 @@ These observations are summarized in Table~\ref{tab:sensitivity-overheads}, whic
 ]
 \addplot[pattern=north east lines,pattern color=black] 
     coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
-\legend{Involuntary CS} % right-axis series legend
-\end{axis}
-
-% --- Overhead factor labels ---
-\begin{axis}[
-    hide axis,
-    width=14cm,
-    height=8cm,
-    symbolic x coords={Kyber,Dhrystone,CoreMark}
-]
-\node[font=\small, anchor=south] at (axis cs:Kyber,29.2) {2.73$\times$};
-\node[font=\small, anchor=south] at (axis cs:Dhrystone,24.7) {1.61$\times$};
-\node[font=\small, anchor=south] at (axis cs:CoreMark,107.3) {1.06$\times$};
+\legend{Involuntary CS}
 \end{axis}
 
 \end{tikzpicture}
-\caption{Native vs enclave execution times (left axis) and involuntary context switches (right axis), with overhead factors above Enclave bars}
+\caption{Comparison of native and enclave execution times (left axis) with slowdown factors annotated, and involuntary context switch counts (right axis).}
 \label{fig:sensitivity-overheads-chart}
 \end{figure}
 
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.7\linewidth]{figures/workload_overhead_comparison.png}
-%   \caption{Relative increase in wall-clock execution time under enclave protection across three workload types.}
-%   \label{fig:workload_overhead}
-% \end{figure}
+Overall, the impact of enclave execution overheads varies sharply by workload class, with memory-intensive cryptographic routines like Kyber suffering the most, and compute-dominant tasks like CoreMark showing minimal disruption. Importantly, system-level costs such as context switching appear invariant to workload structure, suggesting that certain overheads are intrinsic to enclave runtime design rather than application behavior. These distinctions are critical for guiding future secure system optimizations, especially in embedded or resource-constrained environments.
 
-In summary, this workload sensitivity analysis reveals a clear hierarchy of enclave overhead impacts based on workload characteristics. Cryptographic workloads, particularly those like Kyber with memory-intensive operations and frequent data-dependent access patterns, are disproportionately affected by the secure memory fabric’s latency and the enclave runtime’s background operations. In contrast, workloads with predictable access patterns or longer execution durations, such as CoreMark, exhibit substantially lower performance degradation. These insights are critical for system designers seeking to deploy trusted execution environments in resource-constrained systems, as they inform trade-offs between security, performance, and workload type.
+rkloads, \texttt{coremark} stood out as the only one to exhibit consistent, positive scaling behavior. Performance improved by approximately 40.8\% with each additional core, and a similarly proportional uplift was observed with increased memory. This result is aligned with earlier observations: CoreMark’s mixed-instruction profile and parallelism-friendly design allow it to exploit both increased computational throughput and expanded memory capacity. As a compute-bound benchmark with moderate data locality, CoreMark scales predictably and efficiently with additional hardware provisioning.
+
+In contrast, other workloads revealed far less favorable scaling characteristics. \texttt{Dhrystone}, for example, degraded by an average of 27.3\% per increment in either core or memory capacity. This counterintuitive result likely stems from architectural inefficiencies introduced by scaling: increased cache contention, ineffective parallel scheduling, or synchronization overheads may all contribute to this decline. Given Dhrystone’s tightly looped, serial control flow, its structure inherently resists parallelization and may suffer under hardware configurations that introduce unnecessary execution complexity.
+
+Similarly, the \texttt{kyber} benchmark exhibited performance degradation averaging 26.1\% with increased cores and memory. These declines reflect Kyber’s sensitivity to memory hierarchy disruptions and suggest that parallelism may exacerbate contention for shared resources or increase memory access latency in unpredictable ways. Given Kyber’s cryptographic design, which involves frequent pointer dereferencing and buffer manipulation, increased hardware does not necessarily translate into improved performance and may instead magnify system-level inefficiencies.
+
+For enclave-protected variants—\texttt{coremark.ke}, \texttt{enclave.ke}, and \texttt{kyber.ke}—the effect of hardware scaling was largely negligible. Across all test configurations, performance remained flat, indicating that these workloads are fundamentally bottlenecked by enclave runtime constraints rather than available compute or memory resources. Single-threaded enclave runtimes, fixed enclave memory regions, and serialization of cryptographic protections (e.g., memory encryption, page integrity) all limit the extent to which additional hardware can be utilized. These behaviors reinforce the architectural ceiling imposed by current enclave frameworks, especially under Physical Memory Protection (PMP) constraints observed earlier.
+
 
 \section{Impact of Hardware Parameters (Cores, Memory, Cache)}
+\label{sec:hardware-impact}
 
-To comprehensively assess how hardware configurations affect enclave performance, we systematically varied CPU core counts, memory allocations, and cache configurations.
+Following the detailed analysis of enclave overheads and workload-specific sensitivities, this section investigates how changes in underlying hardware parameters—specifically CPU core count and available memory—affect performance across a representative suite of benchmarks. Using the same low-end RISC-V platform and execution model, we systematically varied hardware configurations by incrementally increasing CPU cores and memory capacity. This approach allows us to empirically evaluate whether augmenting computational or memory resources consistently improves performance or if it leads to inefficiencies or stagnation.
 
-Scaling the number of CPU cores yielded anticipated improvements for parallel workloads, with throughput gains plateauing beyond six cores due to synchronization overhead and increased enclave management complexity. Sequential workloads such as Kyber remained unaffected by core scaling.
+We evaluated six workloads, including both native and enclave variants: \texttt{coremark}, \texttt{coremark.ke}, \texttt{dhrystone}, \texttt{enclave.ke}, \texttt{kyber}, and \texttt{kyber.ke}. Each workload was tested across several hardware configurations to characterize scaling behavior. Table~\ref{tab:hardware-impact} summarizes the number of workloads that showed improvement, slowdown, or no change when hardware resources were increased. The table also reports average relative performance changes per incremental scaling step.
 
-Memory allocation experiments revealed that increasing memory size from 64MB to 2GB improved performance for memory-intensive benchmarks by reducing paging and increasing cache hit rates. However, beyond approximately 512MB, gains diminished, indicating sufficient memory provision for the workload’s working set.
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Summary of workload responses to incremental hardware scaling. Positive average values indicate performance improvement per scaling step.}
+\label{tab:hardware-impact}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Metric} & \textbf{CPU cores} & \textbf{Memory (MB)} \\
+\midrule
+Workloads improved                      & 2/6 (33\%) & 2/6 (33\%) \\
+Workloads slowed down                   & 1/6 (17\%) & 1/6 (17\%) \\
+Workloads unaffected                    & 3/6 (50\%) & 3/6 (50\%) \\
+Average performance change per step (\%)& +6.80\%    & +6.80\%    \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item Each increment corresponds to one step increase in CPU cores or memory size.
+\item Performance improvements were primarily driven by \texttt{coremark} workloads.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
 
-Cache configuration impacts were evaluated using the QEMU cache modeling plugin. Larger cache sizes and higher associativity reduced miss rates, particularly for instruction-heavy workloads like Dhrystone. While the plugin’s system-wide scope limits insights into enclave-specific cache activity, the trends suggest that cache tuning can meaningfully influence enclave performance.
+Despite the intuitive expectation that adding more cores or memory would improve performance, the results reveal a nuanced and heterogeneous landscape. Only one-third of workloads exhibit performance gains, while half remain largely unaffected. Notably, \texttt{coremark} and its enclave variant are the primary beneficiaries of increased resources. Conversely, \texttt{dhrystone} and \texttt{kyber} workloads show degradation or no meaningful scaling, potentially due to workload characteristics or overheads associated with enclave execution and system-level bottlenecks.
 
-Importantly, the relationship between memory allocation and PMP usage is nuanced. Larger enclave memory regions may require multiple PMP entries if the memory cannot be described contiguously in a single PMP register, effectively reducing the total number of enclaves supported simultaneously. This interaction between memory layout and PMP capacity represents a critical consideration for enclave deployment strategies.
+To rigorously assess statistical significance, we conducted both parametric (ANOVA) and non-parametric (Kruskal-Wallis) tests on the performance data (Figure~\ref{fig:anova-kruskal-5pattern-wide-labels}). Across all workloads and hardware parameters, none of the observed performance changes reached significance at the $\alpha = 0.05$ level. \texttt{coremark} and \texttt{kyber} showed marginal p-values close to the threshold in both tests, but their effect sizes remained weak. This outcome was consistent across both test families, affirming that the observed variability in performance is unlikely to result from the number of cores or memory alone.\footnote{Kruskal-Wallis tests are used here as a non-parametric alternative to ANOVA to account for violations of normality and homoscedasticity assumptions.}
+
+% \begin{table}[htbp]
+% \centering
+% \begin{threeparttable}
+% \caption{ANOVA and Kruskal-Wallis results for hardware scaling effects. No statistically significant relationships found ($\alpha=0.05$).}
+% \label{tab:anova-corr}
+% \begin{tabular}{@{}l
+%                 S[table-format=1.2] S[table-format=1.3]
+%                 S[table-format=1.2] S[table-format=1.3]
+%                 S[table-format=1.2] S[table-format=1.3]
+%                 S[table-format=1.2] S[table-format=1.3]
+%                 S[table-format=1.3]@{}}
+% \toprule
+% \textbf{Workload} 
+% & \textbf{F (C)} & \textbf{p (C)} 
+% & \textbf{F (M)} & \textbf{p (M)} 
+% & \textbf{H (C)} & \textbf{p (C)} 
+% & \textbf{H (M)} & \textbf{p (M)} 
+% & \textbf{$R^2$} \\
+% \midrule
+% \texttt{coremark}      & 1.50 & 0.218 & 1.50 & 0.218 & 4.60 & 0.100 & 4.74 & 0.094 & 0.030 \\
+% \texttt{coremark.ke}   & 0.01 & 0.975 & 0.01 & 0.975 & 0.02 & 0.989 & 0.00 & 1.000 & 0.000 \\
+% \texttt{dhrystone}     & 0.28 & 0.837 & 0.28 & 0.837 & 0.71 & 0.870 & 0.65 & 0.883 & 0.005 \\
+% \texttt{enclave.ke}    & 0.01 & 0.998 & 0.01 & 0.998 & 0.00 & 1.000 & 0.00 & 1.000 & 0.000 \\
+% \texttt{kyber}         & 1.56 & 0.202 & 1.56 & 0.202 & 4.71 & 0.094 & 4.52 & 0.104 & 0.036 \\
+% \texttt{kyber.ke}      & 0.00 & 1.000 & 0.00 & 1.000 & 0.00 & 1.000 & 0.00 & 1.000 & 0.000 \\
+% \bottomrule
+% \end{tabular}
+% \begin{tablenotes}
+% \footnotesize
+% \item F: ANOVA F-statistic; H: Kruskal-Wallis H-statistic; p: p-value; $R^2$: coefficient of determination.
+% \item (C): CPU core scaling; (M): memory scaling.
+% \item Kruskal-Wallis used due to potential non-normality in small-sample performance data\footnote{Kruskal-Wallis is robust to non-normal distributions and unequal variances.}.
+% \end{tablenotes}
+% \end{threeparttable}
+% \end{table}
+
+
+\begin{figure}[htbp]
+\centering
+\begin{threeparttable}
+    \begin{tikzpicture}
+
+    \begin{axis}[
+        ybar,
+        bar width=8pt,
+        width=14cm,
+        height=8cm,
+        ymin=0,
+        ymax=5.0,
+        ylabel={F / H statistic value},
+        symbolic x coords={coremark,coremark.ke,dhrystone,enclave.ke,kyber,kyber.ke},
+        xtick=data,
+        enlarge x limits=0.15,
+        ymajorgrids,
+        grid style=dashed,
+        legend style={at={(0.5,-0.28)},anchor=north,legend columns=3},
+        axis y line*=left,
+        axis x line*=bottom,
+        x tick label style={rotate=45,anchor=east},
+        nodes near coords,
+        point meta=explicit symbolic,
+        every node near coord/.append style={rotate=90, anchor=west, font=\footnotesize}
+    ]
+
+    % F (C) - dots
+    \addplot[pattern=dots,pattern color=black] 
+    coordinates {
+    (coremark,1.50)   [1.50]
+    (coremark.ke,0.01) []
+    (dhrystone,0.28)  [0.28]
+    (enclave.ke,0.01) []
+    (kyber,1.56)      [1.56]
+    (kyber.ke,0.00)   []
+    };
+
+    % F (M) - horizontal lines
+    \addplot[pattern=horizontal lines,pattern color=black] 
+    coordinates {
+    (coremark,1.50)   [1.50]
+    (coremark.ke,0.01) []
+    (dhrystone,0.28)  [0.28]
+    (enclave.ke,0.01) []
+    (kyber,1.56)      [1.56]
+    (kyber.ke,0.00)   []
+    };
+
+    % H (C) - crosshatch
+    \addplot[pattern=crosshatch,pattern color=black] 
+    coordinates {
+    (coremark,4.60)   [4.60]
+    (coremark.ke,0.02) []
+    (dhrystone,0.71)  [0.71]
+    (enclave.ke,0.00) []
+    (kyber,4.71)      [4.71]
+    (kyber.ke,0.00)   []
+    };
+
+    % H (M) - north east lines
+    \addplot[pattern=north east lines,pattern color=black] 
+    coordinates {
+    (coremark,4.74)   [4.74]
+    (coremark.ke,0.00) []
+    (dhrystone,0.65)  [0.65]
+    (enclave.ke,0.00) []
+    (kyber,4.52)      [4.52]
+    (kyber.ke,0.00)   []
+    };
+
+    % R² - crosshatch dots (dense)
+    \addplot[pattern=crosshatch dots,pattern color=black] 
+    coordinates {
+    (coremark,0.030)   [0.030]
+    (coremark.ke,0.000) []
+    (dhrystone,0.005)  [0.005]
+    (enclave.ke,0.000) []
+    (kyber,0.036)      [0.036]
+    (kyber.ke,0.000)   []
+    };
+
+    \legend{F (C),F (M),H (C),H (M),$R^2$}
+    \end{axis}
+
+    % Right axis for R² scaling
+    \begin{axis}[
+        hide axis,
+        ymin=0, ymax=0.05,
+        axis y line*=right,
+        axis x line=none
+    ]
+    \end{axis}
+
+    \end{tikzpicture}
+    %\caption{ANOVA and Kruskal-Wallis results for hardware scaling effects. No statistically significant relationships found ($\alpha=0.05$)}
+    %\label{fig:anova-kruskal-5pattern-wide-labels}
+    \begin{tablenotes}
+    \footnotesize
+    \item F: ANOVA F-statistic; H: Kruskal–Wallis H-statistic; $R^2$: coefficient of determination.
+    \item (C): CPU core scaling; (M): memory scaling.
+    \item Kruskal–Wallis used due to potential non-normality in small-sample performance data\tnote{a}.
+    \item[a] Kruskal–Wallis is robust to non-normal distributions and unequal variances.
+    \end{tablenotes}
+\end{threeparttable}
+\caption{ANOVA and Kruskal–Wallis results for hardware scaling effects}
+\label{fig:anova-kruskal-5pattern-wide-labels}
+\end{figure}
+
+
+Linear regression modeling (Table~\ref{tab:regression}) supports these observations, showing minimal slopes and $R^2$ values near zero for most workloads, indicating that neither core count nor memory size reliably predict performance changes. \texttt{coremark} exhibits modestly positive coefficients (+408 and +25 for cores and memory respectively), explaining some improvements seen in the scaling steps. In contrast, \texttt{dhrystone} and \texttt{kyber} show negative regression slopes, consistent with their observed performance degradation under scaling. Enclave variants uniformly display coefficients near zero, suggesting that enclave overheads may overshadow hardware scaling effects.
+
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Linear regression coefficients of performance on hardware parameters. Positive values indicate performance gains; negative values indicate degradation.}
+\label{tab:regression}
+\begin{tabular}{@{}l
+                S[table-format=7.3]
+                S[table-format=7.3]
+                S[table-format=7.3]@{}}
+\toprule
+\textbf{Workload} & \textbf{Intercept} & \textbf{Cores Coef.} & \textbf{Memory Coef.} \\
+\midrule
+\texttt{coremark}     & 2852.203  & 408.000  & 25.000  \\
+\texttt{coremark.ke}  & 5006.875  & 0.000    & 0.000   \\
+\texttt{dhrystone}    & 1327.375  & -53.750  & -37.500  \\
+\texttt{enclave.ke}   & 5046.875  & 0.000    & 0.000   \\
+\texttt{kyber}        & 2847.875  & -45.625  & -16.250  \\
+\texttt{kyber.ke}     & 5352.250  & 0.000    & 0.000   \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item Coefficients reflect linear regression fits across scaling increments.
+\item Intercept approximates baseline performance; coefficients represent change per incremental unit of cores or memory.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+% \begin{figure}[htbp]
+% \centering
+% \begin{tikzpicture}
+% \begin{axis}[
+%     ybar,
+%     bar width=8pt,
+%     width=14cm,
+%     height=8cm,
+%     ymin=-100, ymax=5500,
+%     ylabel={Coefficient value},
+%     symbolic x coords={coremark,coremark.ke,dhrystone,enclave.ke,kyber,kyber.ke},
+%     xtick=data,
+%     enlarge x limits=0.15,
+%     ymajorgrids,
+%     grid style=dashed,
+%     legend style={at={(0.5,-0.20)},anchor=north,legend columns=3},
+%     axis y line*=left,
+%     axis x line*=bottom,
+%     x tick label style={rotate=45,anchor=east},
+%     nodes near coords,
+%     every node near coord/.append style={font=\footnotesize, rotate=90, anchor=west}
+% ]
+
+% % Intercept – dots
+% \addplot[pattern=dots,pattern color=black] 
+% coordinates {
+% (coremark,2852.203)
+% (coremark.ke,5006.875)
+% (dhrystone,1327.375)
+% (enclave.ke,5046.875)
+% (kyber,2847.875)
+% (kyber.ke,5352.250)
+% };
+
+% % Cores Coef. – horizontal lines
+% \addplot[pattern=horizontal lines,pattern color=black] 
+% coordinates {
+% (coremark,408.000)
+% (coremark.ke,0.000)
+% (dhrystone,-53.750)
+% (enclave.ke,0.000)
+% (kyber,-45.625)
+% (kyber.ke,0.000)
+% };
+
+% % Memory Coef. – north east lines
+% \addplot[pattern=north east lines,pattern color=black] 
+% coordinates {
+% (coremark,25.000)
+% (coremark.ke,0.000)
+% (dhrystone,-37.500)
+% (enclave.ke,0.000)
+% (kyber,-16.250)
+% (kyber.ke,0.000)
+% };
+
+% \legend{Intercept,Cores Coef.,Memory Coef.}
+% \end{axis}
+% \end{tikzpicture}
+% \caption{Linear regression coefficients of performance on hardware parameters. Positive values indicate performance gains; negative values indicate degradation.}
+% \label{fig:regression-coefs-greyscale}
+% \end{figure}
+
+In summary, these findings highlight that hardware scaling alone is insufficient to guarantee improved performance in constrained embedded environments with enclave execution. Architectural and workload-specific characteristics critically modulate the impact of additional cores or memory. Without targeted architectural optimization or workload tuning, scaling resources may yield diminishing returns or even harm performance due to factors such as synchronization overheads, enclave context switches, or memory bandwidth limitations.
+
