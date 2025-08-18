@@ -287,6 +287,14 @@ To complement Dhrystone and gain insight into more complex system behavior, the 
 
 The CoreMark version used in this study was sourced from the SiFive repository on GitHub\footnote{\url{https://github.com/sifive/benchmark-coremark}, accessed August 2025}, providing a RISC-V-optimized build compatible with Keystone. Like Dhrystone, CoreMark was run in both native and enclave modes, with results reported as "Iterations Per Second" (IPS), indicating how many complete benchmark runs occur per second. Because CoreMark combines arithmetic and memory operations, IPS delivers a more comprehensive view of system performance, reflecting both CPU and memory subsystem efficiency.
 
+\begin{lstlisting}[language=bash, caption={CoreMark sample output used to extract IPS}, label={lst:coremark-output}]
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 112738928
+Iterations/Sec   : 937.43
+Iterations       : 100000
+\end{lstlisting}
+
 In addition to primary performance metrics—DMIPS for Dhrystone and IPS for CoreMark—this study also analyzed supporting metrics to better characterize system behavior. Overall execution time, measured in wall-clock seconds, was recorded for each benchmark run. Comparing execution times between enclave and native modes quantifies latency introduced by secure execution, including overheads from memory protection, context switching, and enclave isolation mechanisms.
 
 Variability across runs was assessed through the standard deviation of benchmark results over multiple iterations. A low standard deviation signifies consistent and reliable performance, whereas higher variability might indicate sensitivity to system noise, scheduling delays, or other environmental factors.
@@ -380,13 +388,32 @@ The primary performance metric collected was total wall-clock execution time, me
 
 In addition to these high-level metrics, detailed system-level runtime statistics were gathered using standard Linux facilities such as the \texttt{getrusage()} system call. These included:
 
-\begin{lstlisting}[language=bash]
-# CPU time: Total time spent in user mode and kernel mode.
-# Peak RSS: Maximum resident memory usage during execution.
-# Page faults: Number of soft (minor) and hard (major) page faults.
-# Context switches: Voluntary and involuntary context switching events.
-\end{lstlisting}
+% \begin{lstlisting}[language=bash]
+% # CPU time: Total time spent in user mode and kernel mode.
+% # Peak RSS: Maximum resident memory usage during execution.
+% # Page faults: Number of soft (minor) and hard (major) page faults.
+% # Context switches: Voluntary and involuntary context switching events.
+% \end{lstlisting}
 
+\begin{lstlisting}[language=C, caption={In-enclave system-level instrumentation using \texttt{getrusage()}}, label={lst:getrusage}]
+struct rusage usage;
+getrusage(RUSAGE_SELF, &usage);
+
+// CPU time: Total time spent in user mode and kernel mode.
+printf("!User CPU time:     %ld.%06lds\n", usage.ru_utime.tv_sec, usage.ru_utime.tv_usec);
+printf("!System CPU time:   %ld.%06lds\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+
+// Peak RSS: Maximum resident memory usage during execution.
+printf("!Max memory (RSS):  %ld KB\n", usage.ru_maxrss);
+
+// Page faults: Number of soft (minor) and hard (major) page faults.
+printf("!Minor page faults: %ld\n", usage.ru_minflt);
+printf("!Major page faults: %ld\n", usage.ru_majflt);
+
+// Context switches: Voluntary and involuntary context switching events.
+printf("!Voluntary context switches:   %ld\n", usage.ru_nvcsw);
+printf("!Involuntary context switches: %ld\n", usage.ru_nivcsw);
+\end{lstlisting}
 
 These runtime indicators were critical in diagnosing performance behaviors that could not be attributed to CPU throughput alone. For instance, elevated context switch counts in parallel configurations were often correlated with increased enclave transition overhead or CPU oversubscription, especially in memory-constrained environments.
 

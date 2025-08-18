@@ -213,7 +213,7 @@ This issue becomes even more pronounced in multi-tenant environments where multi
 \label{fig:pmp-fragmentation-entries}
 \end{figure}
 
-To address overhead and scalability challenges, **enclave multiplexing** offers a promising software-level strategy by consolidating multiple lightweight workloads into a single enclave. This reduces the number of PMP entries required by reusing them across tasks, optimizing resource usage and improving scalability. An example of a multiplexed enclave task dispatcher is shown in Listing~\ref{lst:enclave-mux}.
+To address overhead and scalability challenges, \emph{enclave multiplexing} offers a promising software-level strategy by consolidating multiple lightweight workloads into a single enclave. This reduces the number of PMP entries required by reusing them across tasks, optimizing resource usage and improving scalability. An example of a multiplexed enclave task dispatcher is shown in Listing~\ref{lst:enclave-mux}.
 
 \begin{lstlisting}[language=Python, caption={Multiplexed enclave task dispatcher.}, label={lst:enclave-mux}]
 def enclave_dispatcher(task_id, input_data):
