@@ -31,7 +31,7 @@
 \contentsline {section}{\numberline {4.4}Performance Sensitivity to Core and Memory Scaling}{46}{section.4.4}%
 \contentsline {chapter}{\numberline {5}Interpretation and Broader Implications}{49}{chapter.5}%
 \contentsline {section}{\numberline {5.1}Synthesis of Key Performance Trends and Hardware Bottlenecks}{50}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Implications for Secure System Design and Cryptographic Workloads}{53}{section.5.2}%
+\contentsline {section}{\numberline {5.2}Implications for Secure System Design and Cryptographic Workloads}{52}{section.5.2}%
 \contentsline {section}{\numberline {5.3}Configuration Best Practices and Deployment Recommendations for RISC-V TEEs}{55}{section.5.3}%
 \contentsline {chapter}{\numberline {6}Conclusion}{59}{chapter.6}%
 \contentsline {chapter}{Bibliography}{61}{chapter*.41}%

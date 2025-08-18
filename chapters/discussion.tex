@@ -166,14 +166,6 @@ pmp_unset: Invalid PMP region index
 pmp_region_free_atomic: Invalid PMP region index
 \end{lstlisting}
 
-Further complicating PMP usage is the rigid encoding of memory regions. The Naturally Aligned Power-of-Two (NAPOT) encoding format requires memory regions to be aligned and sized as powers of two. Irregular or misaligned regions must be split into multiple PMP entries, increasing fragmentation and PMP resource consumption, as illustrated in Figure~\ref{fig:pmp-fragmentation-group}. This fragmentation leads to inefficient use of PMP entries, as multiple entries may be required to cover a single logical memory region, further constraining the number of enclaves that can be instantiated concurrently.
-
-%To address these challenges, both hardware-level and software-level mitigation strategies must be considered.
-
-% Hardware approaches include increasing the number of available PMP entries. Although this requires architectural changes and increased silicon area, it could dramatically improve enclave concurrency. Future RISC-V PMP specifications could also explore more flexible memory region encodings to reduce fragmentation and allow more compact representations of protected regions.
-
-% Software techniques encompass dynamic PMP entry management, where PMP entries are reused or reconfigured at runtime based on workload demands and enclave activity, requiring careful coordination to maintain security. Enclave multiplexing—combining multiple lightweight tasks into a single enclave—reduces the number of enclaves and thus PMP entries required. Additionally, memory layout optimization to align and size enclave memory regions according to NAPOT constraints can significantly reduce PMP entry consumption.
-
 While the PMP mechanism is critical for enforcing isolation in secure enclave systems, its limited number of entries creates significant scalability challenges. Addressing these through combined hardware evolution and smarter software resource management is essential for building scalable, secure computing platforms on RISC-V.
 
 \section{Implications for Secure System Design and Cryptographic Workloads}
