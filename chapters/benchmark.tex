@@ -522,73 +522,74 @@ The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times av
     \vspace{1cm} % spacing between subfigures
 
     % Second Subfigure: Enclave Run10_SEQ vs Run5*
-        \begin{subfigure}{\textwidth}
-        \centering
-        \begin{tikzpicture}
-        \begin{axis}[
-            ybar,
-            bar width=8pt,
-            width=\textwidth,
-            height=8cm,
-            ymode=log,
-            log origin=infty,
-            ymin=0.001,
-            ylabel={Value (log scale)},
-            symbolic x coords={
-                Total\ Time,
-                Iterations/Sec,
-                User\ CPU\ Time,
-                System\ CPU\ Time,
-                Max\ RSS,
-                Minor\ PF,
-                Major\ PF,
-                Voluntary\ CS,
-                Involuntary\ CS
-            },
-            xtick=data,
-            x tick label style={rotate=30, anchor=east},
-            enlarge x limits=0.05,
-            ymajorgrids,
-            grid style=dashed,
-            legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1},
-            nodes near coords,
-            every node near coord/.append style={
-                font=\tiny,
-                rotate=90,
-                anchor=west,
-                /pgf/number format/.cd, fixed, precision=2
-            }
-        ]
-        % Native (Run10_SEQ)
-        \addplot[pattern=north east lines,pattern color=black] coordinates {
-            (Total\ Time,101.11)
-            (Iterations/Sec,989.00)
-            (User\ CPU\ Time,101.14)
-            (System\ CPU\ Time,0.01)
-            (Max\ RSS,1691.60)
-            (Minor\ PF,83.60)
-            (Major\ PF,0.20)
-            (Voluntary\ CS,0.90)
-            (Involuntary\ CS,350.40)
-        };
-        % Enclave (Run10_SEQ)
-        \addplot[pattern=dots,pattern color=black] coordinates {
-            (Total\ Time,107.02)
-            (Iterations/Sec,929.80)
-            (User\ CPU\ Time,41.16)
-            (System\ CPU\ Time,41.00)
-            (Max\ RSS,10.00)
-            (Minor\ PF,1.00)
-            (Major\ PF,0.001) % zero replaced by small non-zero
-            (Voluntary\ CS,49.00)
-            (Involuntary\ CS,65992.00)
-        };
-        \legend{Native (Run10\_SEQ), Enclave (Run10\_SEQ)}
-        \end{axis}
-        \end{tikzpicture}
-        \caption{Log-scale comparison of key metrics for CoreMark 64M\_1Core: Native vs Enclave (Run10\_SEQ).}
-        \label{fig:coremark_native_vs_enclave_log}
-    \end{subfigure}
+\begin{subfigure}{\textwidth}
+    \centering
+    \begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        bar width=8pt,
+        width=\textwidth,
+        height=8cm,
+        ymode=log,
+        log origin=infty,
+        ymin=0.001,
+        ylabel={Value (log scale)},
+        symbolic x coords={
+            Total\ Time,
+            Iterations/Sec,
+            User\ CPU\ Time,
+            System\ CPU\ Time,
+            Max\ RSS,
+            Minor\ PF,
+            Major\ PF,
+            Voluntary\ CS,
+            Involuntary\ CS
+        },
+        xtick=data,
+        x tick label style={rotate=30, anchor=east},
+        enlarge x limits=0.05,
+        ymajorgrids,
+        grid style=dashed,
+        legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1},
+        nodes near coords,
+        every node near coord/.append style={
+            font=\tiny,
+            rotate=90,
+            anchor=west,
+            /pgf/number format/.cd, fixed, precision=2
+        }
+    ]
+    % Native (Run10_SEQ average)
+    \addplot[pattern=north east lines,pattern color=black] coordinates {
+        (Total\ Time,100.91)
+        (Iterations/Sec,989.80)
+        (User\ CPU\ Time,100.99)
+        (System\ CPU\ Time,0.013)
+        (Max\ RSS,1691.60)
+        (Minor\ PF,83.70)
+        (Major\ PF,0.20)
+        (Voluntary\ CS,0.90)
+        (Involuntary\ CS,350.40)
+    };
+    % Enclave (Run10_SEQ average)
+    \addplot[pattern=dots,pattern color=black] coordinates {
+        (Total\ Time,107.45)
+        (Iterations/Sec,928.97)
+        (User\ CPU\ Time,41.16)
+        (System\ CPU\ Time,41.00)
+        (Max\ RSS,10.00)
+        (Minor\ PF,1.00)
+        (Major\ PF,0.001) % zero replaced by small non-zero for log scale
+        (Voluntary\ CS,49.00)
+        (Involuntary\ CS,65992.00)
+    };
+    \legend{Native (Run10\_SEQ avg), Enclave (Run10\_SEQ avg)}
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Log-scale comparison of key metrics for CoreMark 64M\_1Core: Native vs Enclave (averaged over 10 runs).}
+    \label{fig:coremark_native_vs_enclave_log}
+\end{subfigure}
+
 
 \end{figure}
 
