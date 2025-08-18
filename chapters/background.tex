@@ -23,7 +23,58 @@ Security in TEEs hinges on minimizing the Trusted Computing Base (TCB), which en
 
 Commercially dominant TEE solutions include Intel Software Guard Extensions (SGX) and ARM TrustZone. Intel SGX enables enclave creation at user privilege levels, employing hardware-enforced memory encryption and access controls~\cite{costan2016intel}. ARM TrustZone employs a split-world model that partitions processor execution into secure and normal worlds, with transitions mediated by secure monitor calls~\cite{yan2018trustzone}. Despite their widespread deployment, these architectures suffer from proprietary designs and limited transparency, which constrain their flexibility for academic research and system-level innovation.
 
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[b]{0.48\linewidth}
+  \centering
+  \begin{tikzpicture}[font=\small]
+    \draw[fill=green!10] (0,2) rectangle (3,5) node[midway]{\textbf{Secure World}};
+    \draw[fill=red!10] (5,2) rectangle (8,5) node[midway]{\textbf{Normal World}};
+    \draw[fill=gray!20] (2,0) rectangle (6,1.5) node[midway]{\textbf{Secure Monitor}};
+    \draw[->,thick] (3,3.5) -- (5,3.5) node[midway,above]{\textbf{SMC}};
+  \end{tikzpicture}
+  \caption{TrustZone's dual-world architecture with SMC-managed transitions.}
+  \label{fig:trustzone}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+  \centering
+  \begin{tikzpicture}[font=\small]
+    \node[above] at (3,4) {\textbf{Enclave Page Cache (EPC)}};
+    \draw[thick] (0,0) rectangle (6,4);
+
+    \foreach \y/\label in {3.0/{Page 1 (Enc)}, 2.0/{Page 2 (Enc)}, 1.0/{Page 3 (Enc)}} {
+      \fill[blue!10] (0.3,\y) rectangle (5.7,\y+0.8);
+      \draw (0.3,\y) rectangle (5.7,\y+0.8) node[midway]{\label};
+    }
+  \end{tikzpicture}
+  \caption{Intel SGX enclaves mapped to encrypted pages inside the EPC.}
+  \label{fig:sgx-epc}
+\end{subfigure}
+\caption{Comparison of two TEE memory architectures: (a) ARM TrustZone split-world and (b) Intel SGX EPC memory model.}
+\label{fig:tee-architectures}
+\end{figure}
+
 In contrast, open-source TEE frameworks such as Keystone have emerged to address these limitations by leveraging the open, modular RISC-V ISA~\cite{lee2019keystone,dayeol2019keystone}. The modularity and openness of RISC-V facilitate the design of TEEs that are both highly configurable and more transparent, fostering security research and experimentation~\cite{Survey2023}. A central architectural principle of TEEs, exemplified by Keystone, is privilege separation: executing the TCB in the highest privilege mode (M-mode in RISC-V) while relegating untrusted software to lower privilege levels. This design enforces strict isolation policies, preventing untrusted software from compromising enclave security~\cite{lee2019keystone}.
+
+
+\begin{table}[htbp]
+\centering
+\small
+%\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}p{3cm}p{2.5cm}p{2.5cm}p{2.5cm}@{}}
+\toprule
+\textbf{Feature} & \textbf{Intel SGX} & \textbf{ARM TrustZone} & \textbf{Keystone} \\
+\midrule
+Privilege Model & Ring 3 enclaves & Secure Monitor & M-mode TCB \\
+Openness & Closed & Closed & Open \\
+Use Cases & Cloud security & Mobile security & Research, IoT \\
+Hardware Dependency & Intel CPUs & ARM SoCs & RISC-V \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of three TEE implementations.}
+\end{table}
+
 
 By integrating privilege separation, hardware-enforced memory protections, and modular TCB design, TEEs provide a powerful framework for secure computation within adversarial environments. Keystone extends these foundational principles with openness and configurability, offering a valuable platform for both academic research and practical deployments of trusted computing technologies~\cite{suzaki2021tsperf}.
 
@@ -42,16 +93,24 @@ The enclave lifecycle is structured into three primary phases: creation, executi
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\linewidth]{figures/keystone_overview.png}
-\caption{Overview of the Keystone architecture illustrating components such as the Security Monitor, enclave runtime, and the privilege hierarchy.}
-\label{fig:keystone_overview}
-\end{figure}
+\begin{subfigure}[b]{0.9\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/keystone_overview.png}
+    \caption{Keystone architecture showing components such as the Security Monitor, enclave runtime, and the privilege hierarchy.}
+    \label{fig:keystone_overview}
+\end{subfigure}
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.9\linewidth]{figures/enclave_lifecycle.png}
-\caption{Stages of a Keystone enclave lifecycle: creation, execution, and destruction.}
-\label{fig:enclave_lifecycle}
+\vspace{0.5cm}
+
+\begin{subfigure}[b]{0.9\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/enclave_lifecycle.png}
+    \caption{Lifecycle of a Keystone enclave: creation, execution, and destruction phases.}
+    \label{fig:enclave_lifecycle}
+\end{subfigure}
+
+\caption{Overview of the Keystone architecture and its enclave lifecycle.}
+\label{fig:keystone_grouped}
 \end{figure}
 
 Keystone’s modular and open framework leverages the openness of RISC-V to provide strong security guarantees while enabling flexibility for research and customization. Its minimal TCB, modular layering (Security Monitor, runtime, eapp), and standards-compliant interfaces make it an attractive platform for developing and evaluating secure applications on modern processors \cite{dayeol2019keystone}. 
@@ -63,6 +122,23 @@ To support secure communication and attestation, Keystone enclaves can integrate
 Physical Memory Protection (PMP) is a hardware-level security mechanism defined by the RISC-V privileged architecture to provide fine-grained control over access permissions to physical memory regions. PMP plays a central role in enabling secure system software, particularly in contexts where memory isolation between privileged and unprivileged software is essential. It is a critical enabler for implementing secure environments such as hypervisors, operating system kernels, and Trusted Execution Environments (TEEs) without relying on traditional virtualization support~\cite{riscvprivspec}.
 
 In RISC-V, the PMP mechanism is configured exclusively by machine-mode (M-mode) software—the most privileged execution level in the architecture—and applies access control policies to all lower-privileged software running in supervisor (S-mode) or user mode (U-mode). Each PMP entry defines a memory region along with a set of permissions (read, write, execute) and an addressing mode. The hardware enforces these permissions such that any access attempt by S-mode or U-mode software that violates a PMP rule results in a trap to M-mode. This mechanism ensures that M-mode retains full control over physical memory while being able to delegate controlled access to untrusted software layers~\cite{riscvprivspec,lee2019keystone}.
+
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=2.5cm,>=Stealth]
+\tikzstyle{block} = [draw, minimum width=3cm, minimum height=2cm, align=center, font=\small]
+
+\node[block, fill=gray!10] (cpu) {CPU Core\\\footnotesize Modes: M / S / U};
+\node[block, fill=gray!20, right=of cpu] (pmp) {PMP Unit};
+\node[block, fill=gray!30, right=of pmp] (mem) {Physical Memory};
+
+\draw[->, thick] (cpu.east) -- node[above]{\footnotesize Access Request} (pmp.west);
+\draw[->, thick] (pmp.east) -- node[above]{\footnotesize Permission Check} (mem.west);
+\end{tikzpicture}
+\caption{PMP hardware architecture in the RISC‑V privilege hierarchy. Memory accesses from the CPU are filtered through PMP entries to enforce physical memory protection.}
+\label{fig:pmp-arch}
+\end{figure}
 
 A typical RISC-V core supports a fixed number of PMP entries (commonly 8 or 16), each represented by two Control and Status Registers (CSRs): \texttt{pmpcfg} and \texttt{pmpaddr}. The \texttt{pmpcfg} register specifies the access permissions and address matching mode for each region, while \texttt{pmpaddr} defines the address bounds. RISC-V supports several region encoding modes:
 
@@ -76,11 +152,98 @@ The design of PMP aligns with the minimalist and modular philosophy of RISC-V. U
 
 In the context of TEEs such as the Keystone framework, PMP serves as the fundamental enforcement mechanism for enclave isolation. Keystone leverages PMP to assign a protected memory region, known as the Enclave Page Memory (EPM), to each enclave. This region is configured to be inaccessible to both the untrusted operating system (running in S-mode) and any other software outside the enclave context~\cite{dayeol2019keystone}. During enclave creation, the Keystone Security Monitor (SM)—executing in M-mode—programmatically sets PMP entries to lock the memory region associated with the enclave. The SM verifies the integrity of the enclave binary, computes its cryptographic hash, and sets up the memory layout in such a way that only the enclave code has access to its memory contents~\cite{lee2019keystone,keystone2025how}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=2.8cm,>=Stealth]
+\usetikzlibrary{positioning, backgrounds}
+\tikzstyle{block} = [draw, minimum width=3cm, minimum height=1.5cm, font=\small]
+
+% Main nodes
+\node[block, fill=gray!10] (os) {OS (S-mode)};
+\node[block, fill=gray!20, right=of os] (pmpunit) {PMP Unit};
+\node[block, fill=gray!30, right=of pmpunit] (enclave) {Enclave (EPM)};
+
+% Arrows
+\draw[->, thick] (os.east) -- node[above]{\footnotesize Memory Access} (pmpunit.west);
+\draw[->, thick] (pmpunit.east) -- node[above]{\footnotesize Filtered Access} (enclave.west);
+
+% Context switch label (moved lower)
+\node[below=1.8cm of pmpunit, font=\footnotesize, fill=white, inner sep=2pt, rounded corners=1pt, draw=gray!50] 
+    {Context switch $\Rightarrow$ PMP reconfig};
+
+% Background shading (after everything else)
+\begin{scope}[on background layer]
+  % Only OS is untrusted
+  \fill[red!10, opacity=0.3] 
+    ($(os.north west)+(-0.4,0.4)$) rectangle 
+    ($(os.south east)+(0.4,-0.4)$);
+
+  % PMP + Enclave are trusted
+  \fill[green!10, opacity=0.3] 
+    ($(pmpunit.north west)+(-0.4,0.4)$) rectangle 
+    ($(enclave.south east)+(0.4,-0.4)$);
+\end{scope}
+
+% Trust domain labels (moved closer to diagram)
+\node[below=0.8cm of os, font=\scriptsize, align=center, fill=white, inner sep=2pt, draw=gray!40, rounded corners=1pt] 
+    {Untrusted domain};
+
+\node[below=0.8cm of enclave, font=\scriptsize, align=center, fill=white, inner sep=2pt, draw=gray!40, rounded corners=1pt] 
+    {Trusted enclave memory};
+
+\end{tikzpicture}
+\caption{PMP-enforced isolation of Keystone enclaves. PMP is reconfigured on each context switch to protect enclave memory from the untrusted OS.}
+\label{fig:pmp-keystone}
+\end{figure}
+
+
 Furthermore, PMP entries are reconfigured dynamically during enclave context switches. For example, when the host operating system regains control, the PMP settings are altered to revoke access to the enclave’s memory. Conversely, when the enclave resumes execution, the SM reinstates its PMP region. This dynamic switching is essential to enforce temporal isolation and prevent time-of-check-to-time-of-use (TOCTTOU) vulnerabilities that may arise during state transitions~\cite{cerberus2022}.
 
 Despite its utility, PMP has several practical limitations. The fixed number of PMP entries restricts the number of simultaneously protected regions, posing a challenge for complex systems with many isolated domains or subregions. Moreover, overlapping PMP regions are resolved based on entry priority (lower-numbered entries take precedence), requiring careful configuration to avoid inadvertent leaks or privilege escalations~\cite{riscvprivspec}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+% Memory line
+\draw[thick] (0,0) -- (12,0);
+
+% Address labels
+\foreach \x/\lbl in {0/0x0000, 4/0x4000, 8/0x8000, 12/0xC000} {
+    \draw (\x,0.1) -- (\x,-0.1) node[below, font=\scriptsize] {\lbl};
+}
+
+% Entry regions
+\draw[fill=blue!30, opacity=0.8] (2,0.3) rectangle (8,0.8)
+    node[pos=.5, font=\footnotesize] {Entry 1};
+\draw[fill=red!40, opacity=0.6] (4,0.3) rectangle (10,0.8)
+    node[pos=.5, font=\footnotesize, text=black] {Entry 0};
+
+% Priority indication
+\draw[->, thick] (10.5,0.55) -- (11.5,0.55) node[right, font=\scriptsize] {Higher Address};
+\node[below, font=\footnotesize] at (6,-0.3) {Lower-numbered entry (Entry 0) takes precedence over Entry 1};
+\end{tikzpicture}
+\caption{Overlapping PMP regions. When regions overlap, the lower-numbered PMP entry has priority.}
+\label{fig:pmp-priority}
+\end{figure}
+
+
 Security researchers have explored various enhancements and formal models to increase the reliability and verifiability of PMP-based isolation. For example, Cerberus~\cite{cerberus2022} builds a formally verified memory-sharing abstraction over PMP to enable safe communication between enclaves and untrusted components. Similarly, HexBox~\cite{hexbox2018} leverages PMP for real-time embedded security by associating memory regions with specific control-flow paths in embedded firmware, demonstrating PMP's applicability beyond general-purpose computing.
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{>{\raggedright}p{3cm} >{\raggedright}p{4cm} >{\raggedright\arraybackslash}p{5cm}}
+\hline
+\textbf{Limitation} & \textbf{Impact} & \textbf{Enhancement / Research} \\
+\hline
+Fixed \# entries & Limits scalability & Cerberus verified sharing \\
+No dynamic resizing & Hard to adapt to workloads & Dynamic PMP proposals \\
+Limited granularity & Coarse protection & Fine‑grained tagging \\
+\hline
+\end{tabular}
+\caption{Summary of PMP limitations and research‑driven enhancements.}
+\label{tab:pmp-limitations}
+\end{table}
 
 The role of PMP in Keystone exemplifies how low-complexity hardware primitives can be orchestrated by secure software layers to implement strong isolation guarantees. This synergy is particularly effective in the RISC-V ecosystem, where the open architecture allows deep customization, formal verification, and academic experimentation~\cite{Survey2023}. The combination of PMP, a secure boot mechanism, and a minimal TCB enables Keystone to enforce hardware-rooted enclave isolation without relying on opaque, vendor-specific extensions, setting it apart from alternatives like Intel SGX or ARM TrustZone~\cite{dayeol2019keystone,turn0search0}.
 
@@ -183,13 +346,108 @@ Keystone distinguishes itself from commercial Trusted Execution Environments—s
 
 First and foremost, Keystone is fully open-source, enabling complete transparency and extensibility. This contrasts sharply with the proprietary nature of SGX, TrustZone, and SEV, which limits research innovation and system adaptability \cite{turn0search0}. The open stance of Keystone allows researchers to inspect, customize, and formally verify its components, significantly reducing the Trusted Computing Base (TCB) compared to monolithic Secure World kernels or hardware-bound enclaves \cite{turn0search0}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xbar,
+    width=10cm, height=5cm,
+    xmin=0, xmax=100,
+    xlabel={Relative TCB size (\%)},
+    symbolic y coords={SEV,SGX,TrustZone,Keystone},
+    ytick=data,
+    nodes near coords,
+    every node near coord/.append style={font=\scriptsize},
+    bar width=10pt
+]
+\addplot[pattern=north east lines] coordinates {(60,SEV) (50,SGX) (80,TrustZone) (20,Keystone)};
+\end{axis}
+\end{tikzpicture}
+\caption{Estimated relative TCB sizes (illustrative).}
+\label{fig:tcb-size}
+\end{figure}
+
+
 ARM TrustZone operates using a dual-world model: a Secure World and a Normal World, switching through secure monitor calls (SMCs). While effective, this design suffers from overhead due to frequent context switching and increased TCB complexity since the Secure World often incorporates a full OS stack (e.g., OP‑TEE) \cite{turn0search0}. In contrast, Intel SGX allows enclave creation at user-level with encrypted memory regions but remains constrained by limited enclave size, single-mode operation, and dependency on Intel hardware, hindering portability and flexibility \cite{turn0search0}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    symbolic x coords={TrustZone SMC,SGX ECALL,Keystone call},
+    xtick=data,
+    ylabel={Latency ($\mu$s)},
+    ymin=0, ymax=12,
+    nodes near coords,
+    bar width=14pt
+]
+\addplot[pattern=dots] coordinates {(TrustZone SMC,10) (SGX ECALL,8) (Keystone call,3)};
+\end{axis}
+\end{tikzpicture}
+\caption{Illustrative context switch latency across TEEs.}
+\label{fig:ctx-overhead}
+\end{figure}
 Keystone effectively synthesizes the strengths of these platforms while avoiding their limitations. It supports dynamic enclave creation spanning both user and supervisor modes, with security ensured via low-overhead Physical Memory Protection (PMP) and a lightweight, verifiable Security Monitor operating in M-mode \cite{dayeol2019keystone}. This design offers richer enclave functionality with reduced complexity.
 
 Empirical comparisons further highlight Keystone’s competitive performance. TS‑Perf, a systematic benchmarking framework, measured execution time across SGX, TrustZone, and RISC‑V Keystone using identical binaries and workloads (e.g., internal APIs, matrix operations, memory and storage access). It reports how architectural differences manifest in performance across ecosystems \cite{turn0search5}. Broader experimental evaluations, such as those comparing SGX, SEV, and Intel TDX, emphasize their varying overheads in CPU-, memory-, and I/O-bound workloads. These comparisons underscore that Keystone—while not the fastest in all cases—offers compelling performance coupled with openness and ease of extension \cite{turn0search2,turn0search10}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=10cm, height=6cm,
+    ymin=0, ymax=110,
+    ylabel={Relative performance (\%)},
+    symbolic x coords={CPU-bound,Memory-bound,I/O-bound},
+    xtick=data,
+    ymajorgrids,
+    legend style={at={(0.5,-0.2)},anchor=north,legend columns=3}
+]
+\addplot[pattern=north east lines] coordinates {(CPU-bound,98) (Memory-bound,70) (I/O-bound,65)};
+\addplot[pattern=dots] coordinates {(CPU-bound,100) (Memory-bound,50) (I/O-bound,55)};
+\addplot[pattern=crosshatch] coordinates {(CPU-bound,95) (Memory-bound,60) (I/O-bound,50)};
+\legend{Keystone,SGX,TrustZone}
+\end{axis}
+\end{tikzpicture}
+\caption{Illustrative TS‑Perf‑style benchmark comparison (REE=100\%).}
+\label{fig:bench-compare}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=stealth, font=\small]
+\draw[->, thick] (0,0) -- (12,0);
+
+\foreach \x/\year/\name in {0/2004/TrustZone,3/2015/SGX,5/2016/SEV,8/2019/Keystone,10/2020/TDX} {
+    \draw (\x,0) -- (\x,-0.3) node[below] {\year};
+    \node[above=0.3cm] at (\x,0) {\name};
+}
+\end{tikzpicture}
+\caption{Timeline of selected TEE introductions.}
+\label{fig:tee-timeline}
+\end{figure}
+
 Feature-wise, trusted computing surveys place Keystone in a distinct category: unlike SGX and SEV, which emphasize encryption and hardware-rooted attestation, Keystone enables both secure and flexible enclave configurations, attested through PMP and monitor mechanisms, and retains openness—making it uniquely suitable for research-oriented and evolving hardware/software environments \cite{turn0search9}.
+
+\begin{table}[htbp]
+\centering
+\caption{Feature comparison of major TEEs.}
+\label{tab:tee-features}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Feature & Keystone & SGX & TrustZone & SEV \\
+\midrule
+Open Source & Yes & No & No & No \\
+Dynamic Enclaves & Yes & No & Limited & No \\
+Hardware Dependency & RISC-V & Intel & ARM & AMD \\
+TCB Size & Low & Medium & High & Medium \\
+Flexible Configurations & High & Low & Low & Medium \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 For these reasons, Keystone represents a promising alternative to closed-source TEEs, especially in academic and experimental contexts.
 
@@ -202,9 +460,72 @@ Compute-bound workloads tend to experience the least disruption from TEE isolati
 
 However, memory-bound applications face a very different scenario. Memory isolation mechanisms—particularly those involving encryption, cache partitioning, and page fault handling—can significantly impact runtime performance. For instance, in the Keystone framework, applications such as \texttt{miniz} and \texttt{aes} that utilize large memory footprints have shown over 100\% slowdown when cache partitioning is enabled, due to increased cache misses and eviction rates \cite{dayeol2019keystone}. Similarly, TS-perf benchmarks report an 11\% reduction in performance for ARM TrustZone under random memory access workloads, largely attributable to memory encryption and hierarchy constraints \cite{Suzaki2021}. SGX-based systems experience a sharp decline in performance once the enclave's memory usage exceeds the size of the Enclave Page Cache (EPC), which triggers expensive paging behavior; this trend has been documented comprehensively by SGXGauge \cite{kumar2022sgxgauge}. Scientific computing workloads running on SGX and AMD SEV platforms have demonstrated slowdown factors ranging from 1.2× up to 126×, depending on workload characteristics and hardware constraints \cite{akkram2020scientific}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10cm, height=6cm,
+    xlabel={Working set (MB)},
+    ylabel={Relative performance (\%)},
+    xmin=64, xmax=1024,
+    ymin=0, ymax=110,
+    xtick={64,128,256,512,768,1024},
+    ytick={0,20,40,60,80,100},
+    xmajorgrids, ymajorgrids, grid style=dashed,
+    ticklabel style={font=\small}
+]
+% Shaded region beyond EPC size (example: 256 MB)
+\path[fill=red!12, draw=none] (axis cs:256,0) rectangle (axis cs:1024,110);
+
+% Performance curve (illustrative)
+\addplot[black, very thick, mark=*, mark options={fill=black}] coordinates {
+(64,100) (128,98) (256,95) (512,70) (768,40) (1024,20)
+};
+
+% EPC boundary
+\addplot[dashed, black, thick] coordinates {(256,0) (256,110)};
+\node[font=\footnotesize, fill=white, inner sep=1pt, anchor=south east]
+    at (axis cs:256,110) {EPC boundary};
+
+\end{axis}
+\end{tikzpicture}
+\caption{Performance drops sharply once the working set exceeds the protected memory size (shaded)}
+\label{fig:epc-cliff}
+\end{figure}
+
+
 To address these performance issues, researchers have proposed alternative memory models that relax or restructure the traditional enclave-host memory boundaries. One such innovation is Elasticlave, a shared-memory model designed for enclaves that reduces isolation costs while preserving strong security properties. Elasticlave achieves an order of magnitude better performance compared to traditional spatial isolation models, with overheads as low as 10\% versus 100× to 1000× for spatially isolated configurations \cite{yu2022elasticlave}. Similarly, Eleos introduces self-paging within enclaves, allowing the enclave itself to manage virtual memory. This eliminates host OS involvement in page fault handling and mitigates context-switching and cache pollution overheads, resulting in significantly improved runtime efficiency \cite{orenbach2023eleos}. A related approach, Cerberus, applies formal methods to build a provably secure enclave memory-sharing model on Keystone. It enables safe data sharing with external components without compromising security, all while reducing redundancy and memory copying overheads \cite{lee2022cerberus}.
 
 Input/output (I/O) operations also suffer substantial performance penalties in TEE contexts due to the need for secure copying and context switching. In Keystone, file I/O performance as measured using IOZone demonstrates a 36.2\% decrease in write throughput and a 40.9\% reduction in read throughput when compared to execution in the Rich Execution Environment (REE). Repetitive operations, such as record rewriting, exhibit even greater overhead—up to 55.1\% \cite{dayeol2019keystone}. These trends are consistent across other platforms as well; TS-perf reveals that both OP-TEE and SGX-based file operations incur high latency due to their reliance on ECALLs and limited in-enclave storage APIs \cite{Suzaki2021}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=12pt,
+    width=10cm, height=6cm,
+    ymin=0, ymax=110,
+    ylabel={Relative throughput (\%)},
+    symbolic x coords={Write,Read,Rewrite},
+    xtick=data,
+    ymajorgrids, grid style=dashed,
+    legend style={at={(0.5,-0.25)},anchor=north,legend columns=2, font=\small},
+    pattern color=black,
+    nodes near coords,
+    every node near coord/.append style={font=\scriptsize}
+]
+% Enclave (throughput = 100 - slowdown)
+\addplot[pattern=north east lines] coordinates {(Write,63.8) (Read,59.1) (Rewrite,44.9)};
+% REE baseline
+\addplot[pattern=vertical lines] coordinates {(Write,100) (Read,100) (Rewrite,100)};
+\legend{Enclave,REE}
+\end{axis}
+\end{tikzpicture}
+\caption{I/O throughput degradation in enclaves relative to REE: write (−36.2\%), read (−40.9\%), and record rewrite (−55.1\%).}
+\label{fig:io-throughput}
+\end{figure}
+
 
 Even basic services such as time measurement exhibit significant variability depending on how they are implemented. For example, \texttt{TEE\_GetREETime()}—which retrieves the time from the REE—requires a context switch and is consequently far slower than \texttt{TEE\_GetSystemTime()}, which accesses an enclave-resident hardware timer. The performance difference between these two methods can be as high as 30×, illustrating how even seemingly simple operations may be subject to substantial overhead within a TEE \cite{Suzaki2021}.
 
@@ -215,6 +536,7 @@ Monitoring and profiling enclave performance in real-time remains a difficult ta
 Finally, the cost of lifecycle operations—such as enclave initialization and teardown—should not be underestimated. In Keystone, these operations involve verifying memory integrity through hashing (e.g., SHA-3) and setting up cryptographic metadata. These steps consume between 2M–7M cycles per page for validation, and an additional 20k–30k cycles for each lifecycle event. The use of software-based cryptographic primitives amplifies these costs, though hardware acceleration could substantially mitigate them in future implementations \cite{dayeol2019keystone}.
 
 While TEEs demonstrate excellent performance for compute-bound applications, they impose substantial overheads for workloads that are memory-intensive, I/O-heavy, or reliant on low-latency system services. These performance limitations vary across platforms and are deeply influenced by architectural decisions, memory subsystem behavior, scheduling models, and the design of enclave runtimes. As TEE adoption expands, especially in embedded and latency-sensitive environments, mitigating these performance challenges will require both architectural innovation and co-design between software and hardware components.
+
 
 %\section{Post-Quantum Cryptography and Kyber}
 %\section{Performance Considerations for PQC in TEEs}
