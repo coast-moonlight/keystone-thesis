@@ -448,8 +448,297 @@ A notable system-level overhead manifested in the form of a dramatic increase in
 \end{figure}
 
 The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times averaging 24.7 seconds under enclave protection, roughly 1.6$\times$ slower than the native 15.3-second average. User and system CPU times both rose to near 41 seconds, reflecting the combined cost of enclave runtime overheads and cryptographic memory protection. Throughput, measured in Dhrystone operations per second, declined modestly to the 395,000--408,000 DPS range from a native baseline near 400,000 DPS. Memory consumption and page fault rates stayed consistent with Kyber’s enclave runs, and involuntary context switch counts remained elevated near 66,000 per run.
+\begin{figure}[htbp]
+    \centering
+    % First Subfigure: Native vs Enclave Run10_SEQ
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Elapsed\ Time,
+                DPS,
+                User\ CPU,
+                System\ CPU,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1},
+            nodes near coords,
+            every node near coord/.append style={
+                font=\tiny,
+                rotate=90,
+                anchor=west,
+                /pgf/number format/.cd, fixed, precision=2
+            }
+        ]
+        % Native (Run10_SEQ average)
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Elapsed\ Time,10.02)
+            (DPS,995000)
+            (User\ CPU,10.05)
+            (System\ CPU,0.01)
+            (Max\ RSS,1700)
+            (Minor\ PF,88.9)
+            (Major\ PF,0.1)
+            (Voluntary\ CS,0.7)
+            (Involuntary\ CS,44)
+        };
+        % Enclave (Run10_SEQ average)
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Elapsed\ Time,24.87)
+            (DPS,405000)
+            (User\ CPU,41.15)
+            (System\ CPU,41.00)
+            (Max\ RSS,10)
+            (Minor\ PF,1)
+            (Major\ PF,0.001) % avoid log(0)
+            (Voluntary\ CS,49)
+            (Involuntary\ CS,65992)
+        };
+        \legend{Native (Run10\_SEQ), Enclave (Run10\_SEQ)}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log-scale comparison of Dhrystone 64M\_1Core: Native vs Enclave (Run10\_SEQ).}
+        \label{fig:dhrystone_native_vs_enclave_log}
+    \end{subfigure}
+
+    \vspace{1cm} % spacing between subfigures
+
+    % Second Subfigure: Enclave Run10_SEQ vs Run5*
+        \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Total\ Time,
+                Iterations/Sec,
+                User\ CPU\ Time,
+                System\ CPU\ Time,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.25)},anchor=north,legend columns=-1},
+            nodes near coords,
+            every node near coord/.append style={
+                font=\tiny,
+                rotate=90,
+                anchor=west,
+                /pgf/number format/.cd, fixed, precision=2
+            }
+        ]
+        % Native (Run10_SEQ)
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Total\ Time,101.11)
+            (Iterations/Sec,989.00)
+            (User\ CPU\ Time,101.14)
+            (System\ CPU\ Time,0.01)
+            (Max\ RSS,1691.60)
+            (Minor\ PF,83.60)
+            (Major\ PF,0.20)
+            (Voluntary\ CS,0.90)
+            (Involuntary\ CS,350.40)
+        };
+        % Enclave (Run10_SEQ)
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Total\ Time,107.02)
+            (Iterations/Sec,929.80)
+            (User\ CPU\ Time,41.16)
+            (System\ CPU\ Time,41.00)
+            (Max\ RSS,10.00)
+            (Minor\ PF,1.00)
+            (Major\ PF,0.001) % zero replaced by small non-zero
+            (Voluntary\ CS,49.00)
+            (Involuntary\ CS,65992.00)
+        };
+        \legend{Native (Run10\_SEQ), Enclave (Run10\_SEQ)}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log-scale comparison of key metrics for CoreMark 64M\_1Core: Native vs Enclave (Run10\_SEQ).}
+        \label{fig:coremark_native_vs_enclave_log}
+    \end{subfigure}
+
+\end{figure}
 
 CoreMark enclave runs averaged 107 seconds wall-clock time—about 1.05$\times$ slower than the 101-second native average—with throughput dropping to 919--939 iterations per second compared to the native 967--988 range. CPU time profiles and memory usage mirrored the trends seen in Kyber and Dhrystone, reinforcing a stable but nontrivial enclave overhead footprint.
+
+\begin{figure}[htbp]
+    \centering
+    % First Subfigure: Native vs Enclave Run10_SEQ
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Elapsed\ Time,
+                DPS,
+                User\ CPU,
+                System\ CPU,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.35)},anchor=north,legend columns=-1},
+            nodes near coords,
+            every node near coord/.append style={
+                font=\tiny,
+                rotate=90,
+                anchor=west,
+                /pgf/number format/.cd, fixed, precision=2
+            }
+        ]
+        % Enclave Run10_SEQ (10 runs avg)
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Elapsed\ Time,24.87)
+            (DPS,405000)
+            (User\ CPU,41.15)
+            (System\ CPU,41.00)
+            (Max\ RSS,10)
+            (Minor\ PF,1)
+            (Major\ PF,0.001)
+            (Voluntary\ CS,49)
+            (Involuntary\ CS,65992)
+        };
+        % Enclave Run5* (only 2 valid runs avg)
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Elapsed\ Time,24.67)
+            (DPS,405500)
+            (User\ CPU,41.15)
+            (System\ CPU,41.00)
+            (Max\ RSS,10)
+            (Minor\ PF,1)
+            (Major\ PF,0.001)
+            (Voluntary\ CS,49)
+            (Involuntary\ CS,65992)
+        };
+        \legend{Enclave Run10\_SEQ, Enclave Run5*}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log-scale comparison of Dhrystone Enclave (KE): Run10\_SEQ vs Run5*.\\
+        \textit{* Run5 includes only partial runs (others failed).}}
+        \label{fig:dhrystone_ke_runs_comparison}
+    \end{subfigure}
+
+    \vspace{1cm} % spacing between subfigures
+
+    % Second Subfigure: Run10_SEQ vs Run5* KE
+    \begin{subfigure}{\textwidth}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            bar width=8pt,
+            width=\textwidth,
+            height=8cm,
+            ymode=log,
+            log origin=infty,
+            ymin=0.001,
+            ylabel={Value (log scale)},
+            symbolic x coords={
+                Total\ Time,
+                Iterations/Sec,
+                User\ CPU\ Time,
+                System\ CPU\ Time,
+                Max\ RSS,
+                Minor\ PF,
+                Major\ PF,
+                Voluntary\ CS,
+                Involuntary\ CS
+            },
+            xtick=data,
+            x tick label style={rotate=30, anchor=east},
+            enlarge x limits=0.05,
+            ymajorgrids,
+            grid style=dashed,
+            legend style={at={(0.5,-0.35)},anchor=north,legend columns=-1},
+            nodes near coords,
+            every node near coord/.append style={
+                font=\tiny,
+                rotate=90,
+                anchor=west,
+                /pgf/number format/.cd, fixed, precision=2
+            }
+        ]
+        % Run10_SEQ (10 completed runs)
+        \addplot[pattern=north east lines,pattern color=black] coordinates {
+            (Total\ Time,107.43)
+            (Iterations/Sec,929.56)
+            (User\ CPU\ Time,41.16)
+            (System\ CPU\ Time,41.00)
+            (Max\ RSS,10)
+            (Minor\ PF,1)
+            (Major\ PF,0.001)
+            (Voluntary\ CS,49)
+            (Involuntary\ CS,65992)
+        };
+        % Run5* (3/5 completed runs, 2 failed)
+        \addplot[pattern=dots,pattern color=black] coordinates {
+            (Total\ Time,106.48)
+            (Iterations/Sec,939.16)
+            (User\ CPU\ Time,41.16)
+            (System\ CPU\ Time,41.00)
+            (Max\ RSS,10)
+            (Minor\ PF,1)
+            (Major\ PF,0.001)
+            (Voluntary\ CS,49)
+            (Involuntary\ CS,65992)
+        };
+        \legend{Run10\_SEQ, Run5*}
+        \end{axis}
+        \end{tikzpicture}
+        \caption{Log-scale comparison of CoreMark Enclave (KE) performance: Run10\_SEQ vs Run5*.\\
+        \textit{* Run5 includes only 3 out of 5 completed runs. Runs 4 and 5 failed.}}
+        \label{fig:coremark_ke_runs_comparison}
+    \end{subfigure}
+\end{figure}
+
 
 Beyond sequential execution, attempts to scale enclave workloads via parallelism revealed critical hardware-enforced constraints. Specifically, running 10 concurrent parallel enclave instances consistently failed due to exhaustion or conflicts in Physical Memory Protection (PMP) region allocation. This limitation manifested as execution aborts or enclave crashes, highlighting the sensitivity of enclave concurrency to limited hardware memory isolation resources.
 
