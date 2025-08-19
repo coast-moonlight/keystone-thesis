@@ -51,9 +51,68 @@ This analysis underscores that enclave performance is not solely dependent on ra
 
 An interesting trend emerges when examining system resource allocation impacts on enclave performance. Increasing the number of CPU cores generally improves performance for multi-threaded applications; however, gains plateau beyond a certain threshold due to overhead introduced by context switching between enclave and host execution contexts and the need for thread synchronization within enclaves. This phenomenon is particularly evident in parallelizable workloads, such as CoreMark.
 
+% \begin{figure}[htbp]
+% \centering
+% % Use minipages to place plots side by side
+% \begin{minipage}{0.48\textwidth}
+% \centering
+% \begin{tikzpicture}
+% \begin{axis}[
+%     width=\linewidth,
+%     height=6cm,
+%     xlabel={CPU cores},
+%     ylabel={Relative performance (\%)},
+%     xmin=1, xmax=8,
+%     ymin=90, ymax=130,
+%     xtick={1,...,8},
+%     ymajorgrids,
+%     grid style=dashed,
+%     mark options={solid},
+%     nodes near coords,
+%     every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed}
+% ]
+% \addplot[pattern=dots,pattern color=black,mark=*] coordinates {
+% (1,100) (2,108) (3,115) (4,120) (5,122) (6,123) (7,123) (8,123)
+% };
+% \end{axis}
+% \end{tikzpicture}
+% \caption*{(a) Scaling of a parallelisable workload (CoreMark) with CPU cores. Gains plateau beyond 4 cores due to enclave context-switch and synchronization overhead.}
+% \end{minipage}
+% \hfill
+% \begin{minipage}{0.48\textwidth}
+% \centering
+% \begin{tikzpicture}
+% \begin{axis}[
+%     width=\linewidth,
+%     height=6cm,
+%     xlabel={Memory capacity (MB)},
+%     ylabel={Relative performance (\%)},
+%     xmin=64, xmax=512,
+%     ymin=90, ymax=120,
+%     ymajorgrids,
+%     grid style=dashed,
+%     mark options={solid},
+%     nodes near coords,
+%     every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed}
+% ]
+% \addplot[pattern=north east lines,pattern color=black,mark=*] coordinates {
+% (64,100) (128,106) (256,112) (512,115)
+% };
+% \addplot[pattern=crosshatch,pattern color=black,mark=square*] coordinates {
+% (64,95) (128,100) (256,105) (512,107)
+% };
+% \legend{Contiguous,Fragmented}
+% \end{axis}
+% \end{tikzpicture}
+% \caption*{(b) Effect of increasing memory on enclave performance. Fragmentation reduces gains by consuming extra PMP entries.}
+% \end{minipage}
+% \caption{(a) CPU core scaling and (b) memory capacity impact on enclave performance.}
+% \label{fig:performance-scaling}
+% \end{figure}
+
 \begin{figure}[htbp]
 \centering
-% Use minipages to place plots side by side
+% --- Panel (a) ---
 \begin{minipage}{0.48\textwidth}
 \centering
 \begin{tikzpicture}
@@ -68,17 +127,23 @@ An interesting trend emerges when examining system resource allocation impacts o
     ymajorgrids,
     grid style=dashed,
     mark options={solid},
+    font=\small,
+    legend style={font=\small, at={(0.5,-0.25)}, anchor=north, legend columns=2},
     nodes near coords,
-    every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed}
+    every node near coord/.append style={font=\scriptsize, /pgf/number format/fixed}
 ]
 \addplot[pattern=dots,pattern color=black,mark=*] coordinates {
 (1,100) (2,108) (3,115) (4,120) (5,122) (6,123) (7,123) (8,123)
 };
+\addplot[pattern=horizontal lines,pattern color=black,mark=square*] coordinates {
+(1,100) (2,102) (3,103) (4,104) (5,104) (6,104) (7,104) (8,104)
+};
+\legend{Native,Enclave}
 \end{axis}
 \end{tikzpicture}
-\caption*{(a) Scaling of a parallelisable workload (CoreMark) with CPU cores. Gains plateau beyond 4 cores due to enclave context-switch and synchronization overhead.}
-\end{minipage}
-\hfill
+\subcaption{CoreMark scaling. Enclave performance plateaus early due to overhead.}
+\end{minipage}\hfill
+% --- Panel (b) ---
 \begin{minipage}{0.48\textwidth}
 \centering
 \begin{tikzpicture}
@@ -89,24 +154,31 @@ An interesting trend emerges when examining system resource allocation impacts o
     ylabel={Relative performance (\%)},
     xmin=64, xmax=512,
     ymin=90, ymax=120,
+    xtick={64,128,256,512},
     ymajorgrids,
     grid style=dashed,
     mark options={solid},
+    font=\small,
+    legend style={font=\small, at={(0.5,-0.25)}, anchor=north, legend columns=1},
     nodes near coords,
-    every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed}
+    every node near coord/.append style={font=\scriptsize, /pgf/number format/fixed}
 ]
-\addplot[pattern=north east lines,pattern color=black,mark=*] coordinates {
+\addplot[pattern=dots,pattern color=black,mark=*] coordinates {
 (64,100) (128,106) (256,112) (512,115)
 };
-\addplot[pattern=crosshatch,pattern color=black,mark=square*] coordinates {
-(64,95) (128,100) (256,105) (512,107)
+\addplot[pattern=horizontal lines,pattern color=black,mark=square*] coordinates {
+(64,95) (128,98) (256,100) (512,102)
 };
-\legend{Contiguous,Fragmented}
+\addplot[pattern=crosshatch,pattern color=black,mark=triangle*] coordinates {
+(64,92) (128,94) (256,95) (512,96)
+};
+\legend{Native contiguous, Enclave contiguous, Enclave fragmented}
 \end{axis}
 \end{tikzpicture}
-\caption*{(b) Effect of increasing memory on enclave performance. Fragmentation reduces gains by consuming extra PMP entries.}
+\subcaption{Memory scaling. Fragmentation limits gains by increasing PMP usage.}
 \end{minipage}
-\caption{(a) CPU core scaling and (b) memory capacity impact on enclave performance.}
+
+\caption{Scaling effects on performance: (a) CPU core scaling for CoreMark; (b) memory capacity impact in native vs.\ enclave modes with contiguous and fragmented allocations.}
 \label{fig:performance-scaling}
 \end{figure}
 
