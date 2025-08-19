@@ -873,134 +873,142 @@ For enclave-protected variants—\texttt{coremark.ke}, \texttt{enclave.ke}, and 
 \section{Performance Sensitivity to Core and Memory Scaling}
 \label{sec:hardware-impact}
 
-Building on the preceding workload-specific performance analysis, this section investigates whether increasing CPU cores or available memory yields measurable performance improvements on our constrained RISC-V platform. Unlike traditional systems where scaling typically leads to linear or super-linear speedups, embedded systems with TEEs face distinct bottlenecks—such as synchronization overheads, memory bandwidth limits, and enclave management costs—that may inhibit or even reverse expected performance trends.
+Building on the preceding workload-specific performance analysis, we now examine how the availability of additional hardware resources—specifically CPU cores and physical memory—affects execution performance across native and enclave workloads on our constrained RISC-V platform. In conventional computing environments, such scaling is often assumed to yield linear or super-linear performance gains. However, embedded systems with secure enclaves (TEEs) operate under very different architectural and runtime constraints. Synchronization overheads, limited memory bandwidth, context-switching penalties, and enclave entry/exit costs all contribute to the complex performance dynamics of these systems.
 
-We systematically evaluated six representative workloads across multiple hardware configurations, incrementally increasing CPU core count and physical memory. The workloads include both native and enclave variants: \texttt{coremark}, \texttt{coremark.ke}, \texttt{dhrystone}, \texttt{enclave.ke}, \texttt{kyber}, and \texttt{kyber.ke}. Each was benchmarked across scaling steps, with performance tracked as relative throughput (operations per second).
+To investigate this, we performed a systematic evaluation of six representative workloads spanning both native and secure execution modes: \texttt{coremark}, \texttt{coremark.ke}, \texttt{dhrystone}, \texttt{enclave.ke}, \texttt{kyber}, and \texttt{kyber.ke}. Each workload was benchmarked across multiple hardware configurations, incrementally increasing the number of CPU cores and the amount of available physical memory. Performance was quantified as relative throughput (operations per second), normalized across scaling steps to isolate the impact of hardware changes.
 
-Table~\ref{tab:hardware-impact} summarizes directional performance trends—whether performance improved, degraded, or remained constant—as well as the average relative performance change per scaling step.
+Table~\ref{tab:hardware-impact} presents a high-level summary of the results. For each scaling axis (cores and memory), we classify workloads based on their observed performance response—whether they improved, degraded, or remained effectively unchanged. In addition, we report the average performance change per scaling increment, aggregated across all workloads.
 
 \begin{table}[htbp]
 \centering
 \begin{threeparttable}
-\caption{Summary of workload responses to incremental hardware scaling. Positive average values indicate performance improvement per scaling step.}
+\caption{Summary of workload responses to incremental hardware scaling. Negative average values indicate improved performance (lower runtime) per scaling step.}
 \label{tab:hardware-impact}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 \textbf{Metric} & \textbf{CPU cores} & \textbf{Memory (MB)} \\
 \midrule
 Workloads improved                      & 2/6 (33\%) & 2/6 (33\%) \\
-Workloads slowed down                   & 1/6 (17\%) & 1/6 (17\%) \\
-Workloads unaffected                    & 3/6 (50\%) & 3/6 (50\%) \\
-Average performance change per step (\%)& 9.99   & 9.99   \\
+Workloads slowed down                   & 2/6 (33\%) & 2/6 (33\%) \\
+Workloads unaffected                    & 2/6 (33\%) & 2/6 (33\%) \\
+Average performance change per step (\%)& -8.71      & -8.71      \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
 \footnotesize
-\item Each increment corresponds to one step increase in CPU cores or memory size.
-\item Performance improvements were primarily driven by \texttt{coremark} workloads.
+\item Each increment corresponds to one unit increase in either CPU cores or available memory.
+\item Values reflect direction and magnitude of average runtime change across all workloads.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
 
-These results demonstrate a heterogeneous response to scaling: only one-third of workloads showed any improvement, while the majority exhibited no statistically meaningful gains. Notably, \texttt{coremark} and \texttt{coremark.ke} benefited moderately from increased resources, while other workloads—particularly those involving enclave transitions or cryptographic operations—remained largely invariant or slightly degraded under scaling.
+The results reveal a highly heterogeneous response to hardware scaling. Out of the six workloads, two demonstrated consistent performance improvements with additional resources, two exhibited measurable performance degradation, and two were largely insensitive to the changes. This one-third distribution across outcome categories—improved, degraded, and unaffected—highlights a key finding: hardware scaling in secure embedded platforms does not universally translate into improved performance. In many cases, the architectural and software stack limitations may nullify or even counteract the expected benefits of scaling.
 
-To evaluate the robustness of these trends, we applied both parametric and non-parametric statistical tests. Specifically, one-way ANOVA tested for mean differences across scaling levels, while Kruskal–Wallis and Mann–Whitney U tests evaluated distributional differences without assuming normality. Additionally, Pearson correlation and linear regression were used to quantify trends and explained variance. Results are summarized in Table~\ref{tab:statistical-tests}.
+A closer inspection of individual trends provides additional insight. Workloads such as \texttt{coremark.ke} and \texttt{dhrystone.ke} showed modest but consistent improvements as hardware resources increased, with average runtime reductions of approximately $1.7\%$ and $2.6\%$ per step, respectively. These results suggest that, under certain execution conditions—some enclave workloads can benefit from added parallelism or memory availability.
 
-\begin{table}[htbp]
+In contrast, the native \texttt{dhrystone} and \texttt{kyber} workloads exhibited significant performance degradation, with average runtime increases exceeding $35\%$ per scaling increment. This counterintuitive behavior may stem from increased scheduling overheads, memory contention, or inefficiencies introduced by the runtime environment when additional cores or memory are made available without corresponding application-level parallelism or optimization. These findings underscore the risk of assuming that more resources automatically lead to better performance—particularly in non-threaded or memory-bound scenarios.
+
+Meanwhile, workloads such as \texttt{coremark} and \texttt{kyber.ke} appeared largely indifferent to hardware scaling. Their performance remained flat across all configurations, suggesting that their bottlenecks lie elsewhere—possibly in instruction dispatch, I/O constraints, or TEE-specific execution boundaries that do not benefit from resource scaling.
+
+Statistically, the overall average performance change per scaling step was a negative $-8.71\%$, with a median change of just $-0.51\%$. This gap between the mean and median indicates a skewed distribution, driven by a few strongly negative outliers (notably \texttt{kyber} and \texttt{dhrystone}) rather than uniform underperformance across all workloads.
+
+To rigorously assess the significance of these observed performance trends, we applied both parametric and non-parametric statistical tests across all configurations. Specifically, a one-way ANOVA test was used to evaluate mean differences between scaling levels (under the assumption of normality), while the Kruskal–Wallis test assessed distributional differences in a non-parametric manner. These results are visualized in Figure~\ref{fig:combined-analysis}.
+
+\begin{figure}[htbp]
 \centering
-\caption{Statistical test results for performance scaling across workloads. Parametric and non-parametric tests assess significance of changes with respect to CPU cores and memory.}
-\label{tab:statistical-tests}
-\begin{subtable}[t]{\textwidth}
+
+% --- Subfigure (a): p-value Bar Chart ---
+\begin{subfigure}[t]{0.9\linewidth}
 \centering
-\caption{Parametric Tests: ANOVA, Pearson correlation, and $R^2$.}
-\vspace{0.5em}
-\begin{tabular}{@{}l
-                S[table-format=1.2] S[table-format=1.3]
-                S[table-format=1.2] S[table-format=1.3]
-                S[table-format=1.3]@{}}
-\toprule
-\textbf{Workload} 
-& \textbf{F (Cores)} & \textbf{p (ANOVA)} 
-& \textbf{r (Cores)} & \textbf{p (r)} 
-& \textbf{$R^2$} \\
-\midrule
-\texttt{coremark}      & 1.50 & 0.218 & -0.16 & 0.052 & 0.030 \\
-\texttt{coremark.ke}   & 0.01 & 0.975 &  0.00 & 0.999 & 0.000 \\
-\texttt{dhrystone}     & 0.28 & 0.837 &  0.07 & 0.374 & 0.005 \\
-\texttt{enclave.ke}    & 0.01 & 0.998 &  0.00 & 0.961 & 0.000 \\
-\texttt{kyber}         & 1.56 & 0.202 & -0.17 & 0.053 & 0.036 \\
-\texttt{kyber.ke}      & 0.00 & 1.000 &  0.00 & 1.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\begin{tablenotes}
-\footnotesize
-\item Parametric tests assume normal distributions.
-\item r: Pearson correlation; $R^2$: variance explained by linear regression.
-\end{tablenotes}
-\end{subtable}
+\begin{tikzpicture}
+\begin{axis}[
+    width=\linewidth,
+    height=7cm,
+    ybar,
+    bar width=10pt,
+    ymin=0, ymax=1,
+    ymajorgrids,
+    grid style=dashed,
+    symbolic x coords={coremark, coremark.ke, dhrystone, dhrystone.ke, kyber, kyber.ke},
+    xtick=data,
+    xticklabel style={font=\small, rotate=30, anchor=east},
+    enlarge x limits=0.15,
+    ylabel={p-value},
+    axis y line*=left,
+    axis x line*=bottom,
+    font=\small,
+    legend style={font=\small, at={(0.5,1.1)}, anchor=south, legend columns=2},
+    nodes near coords,
+    every node near coord/.append style={
+        font=\scriptsize,
+        rotate=90,
+        anchor=west,
+        yshift=2pt
+    }
+]
 
-\vspace{1.5em}
+% ANOVA
+\addplot+[ybar, pattern=crosshatch, pattern color=black, draw=black, bar shift=-6pt] coordinates {
+  (coremark, 0.827) (coremark.ke, 0.113) (dhrystone, 0.193)
+  (dhrystone.ke, 0.353) (kyber, 0.138) (kyber.ke, 0.421)
+};
 
-\begin{subtable}[t]{\textwidth}
-\centering
-\caption{Non-Parametric Tests: Kruskal–Wallis and Mann–Whitney U.}
-\vspace{0.5em}
-\begin{tabular}{@{}l
-                S[table-format=2.2] S[table-format=1.3]
-                S[table-format=2.2] S[table-format=1.3]@{}}
-\toprule
-\textbf{Workload} 
-& \textbf{KW (H)} & \textbf{p (KW)} 
-& \textbf{MWU (U)} & \textbf{p (MWU)} \\
-\midrule
-\texttt{coremark}      & 3.60 & 0.057 & 10.00 & 0.052 \\
-\texttt{coremark.ke}   & 0.00 & 1.000 & 15.00 & 0.999 \\
-\texttt{dhrystone}     & 0.20 & 0.654 & 14.00 & 0.374 \\
-\texttt{enclave.ke}    & 0.01 & 0.961 & 15.00 & 0.961 \\
-\texttt{kyber}         & 3.75 & 0.053 & 10.00 & 0.053 \\
-\texttt{kyber.ke}      & 0.00 & 1.000 & 15.00 & 1.000 \\
-\bottomrule
-\end{tabular}
-\begin{tablenotes}
-\footnotesize
-\item KW: Kruskal–Wallis H-statistic; MWU: Mann–Whitney U-statistic.
-\item Non-parametric tests used due to small sample sizes and potential non-normality.
-\end{tablenotes}
-\end{subtable}
-\end{table}
+% Kruskal-Wallis
+\addplot+[ybar, pattern=north east lines, pattern color=black, draw=black, bar shift=6pt] coordinates {
+  (coremark, 0.967) (coremark.ke, 0.417) (dhrystone, 0.306)
+  (dhrystone.ke, 0.160) (kyber, 0.258) (kyber.ke, 0.865)
+};
 
-None of the statistical tests yielded significant $p$-values at the $\alpha = 0.05$ level, though \texttt{coremark} and \texttt{kyber} approached marginal significance in the Kruskal–Wallis and Mann–Whitney U tests. However, even in these cases, Pearson correlations and $R^2$ values indicate weak or negligible effect sizes. These results strongly suggest that, for most workloads, hardware scaling does not yield statistically meaningful performance improvements.
+\legend{ANOVA p-values, Kruskal-Wallis p-values}
 
-This interpretation is further supported by linear regression analysis in Table~\ref{tab:regression}, which reports slope coefficients and intercepts for each workload's performance as a function of core count and memory.
+% Significance line at p = 0.05
+\draw[black, dashed] (rel axis cs:0,0.05) -- (rel axis cs:1,0.05);
 
-\begin{table}[htbp]
+\end{axis}
+\end{tikzpicture}
+\caption{ANOVA and Kruskal-Wallis p-values for core and memory scaling. p-values below the $\alpha=0.05$ threshold (dashed line) indicate statistically significant effects.}
+\label{fig:anova-kruskal}
+\end{subfigure}
+
+\vspace{1em}
+
+% --- Subfigure (b): Regression Table ---
+\begin{subfigure}[t]{0.9\linewidth}
 \centering
 \begin{threeparttable}
-\caption{Linear regression coefficients of performance on hardware parameters. Positive values indicate performance gains; negative values indicate degradation.}
-\label{tab:regression}
+\caption{Linear regression coefficients of performance on hardware parameters.}
+\label{tab:regression-coefs}
 \begin{tabular}{@{}l
+                S[table-format=7.3]
                 S[table-format=7.3]
                 S[table-format=7.3]
                 S[table-format=7.3]@{}}
 \toprule
-\textbf{Workload} & \textbf{Intercept} & \textbf{Cores Coef.} & \textbf{Memory Coef.} \\
+\textbf{Workload} & \textbf{Intercept} & \textbf{Cores Coef.} & \textbf{Memory Coef.} & \textbf{$R^2$} \\
 \midrule
-\texttt{coremark}     & 2852.203  & 408.000  & 25.000  \\
-\texttt{coremark.ke}  & 5006.875  & 0.000    & 0.000   \\
-\texttt{dhrystone}    & 1327.375  & -53.750  & -37.500  \\
-\texttt{enclave.ke}   & 5046.875  & 0.000    & 0.000   \\
-\texttt{kyber}        & 2847.875  & -45.625  & -16.250  \\
-\texttt{kyber.ke}     & 5352.250  & 0.000    & 0.000   \\
+\texttt{coremark}     & 102.805  & -0.508  & 0.008  & 0.038 \\
+\texttt{coremark.ke}  & 122.474  & -2.970  & 0.007  & 0.071 \\
+\texttt{dhrystone}    & 52.178   & -19.627 & 0.151  & 0.282 \\
+\texttt{enclave.ke}   & 28.257   & 1.104   & -0.019 & 0.043 \\
+\texttt{kyber}        & 89.318   & -40.129 & 0.329  & 0.035 \\
+\texttt{kyber.ke}     & 42.219   & 0.824   & -0.029 & 0.070 \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
 \footnotesize
 \item Coefficients reflect linear regression fits across scaling increments.
 \item Intercept approximates baseline performance; coefficients represent change per incremental unit of cores or memory.
+\item \( R^2 \) indicates model fit (explained variance); values near zero imply weak correlation.
 \end{tablenotes}
 \end{threeparttable}
-\end{table}
+\caption*{}
+\end{subfigure}
 
-Here again, \texttt{coremark} is the only workload to exhibit a positive response to hardware scaling, albeit with limited effect size. All enclave workloads display near-zero or flat regression slopes, underscoring the notion that scaling is generally ineffective when trusted execution overheads dominate the execution path.
+\caption{Statistical analysis of workload performance scaling. (a) ANOVA and Kruskal-Wallis tests evaluate whether core/memory scaling significantly affects performance. (b) Linear regression models estimate the effect magnitude and fit quality.}
+\label{fig:combined-analysis}
+\end{figure}
 
-In summary, while modest improvements are observed for select CPU-bound native workloads, scaling core or memory resources yields no consistent benefit—and occasionally even degrades performance—under enclave execution. These findings highlight the need for deeper architectural or runtime co-optimization if scaling is to deliver tangible performance benefits in secure embedded platforms.
+As shown in Figure~\ref{fig:anova-kruskal}, none of the $p$-values from either ANOVA or Kruskal–Wallis testing fell below the $\alpha = 0.05$ significance threshold. This result indicates a lack of statistically significant performance variation across hardware scaling steps for all workloads tested, regardless of execution context. The regression coefficients in subfigure~(b) further reinforce this interpretation: the slopes for both core and memory scaling are near zero in most cases, with low \( R^2 \) values suggesting weak or no explanatory power.
+
+%In summary, while certain workloads demonstrate mild sensitivity to hardware scaling, these effects are neither statistically significant nor consistent across the benchmark suite. This finding has important implications for the design of secure embedded systems: namely, that simply increasing hardware capabilities—whether by adding cores or memory—does not guarantee improved performance under TEE constraints. Instead, performance tuning must consider software-level optimizations, workload characteristics, and the inherent cost model of enclave-based execution.
+
