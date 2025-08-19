@@ -182,7 +182,6 @@ An interesting trend emerges when examining system resource allocation impacts o
 \label{fig:performance-scaling}
 \end{figure}
 
-
 Memory configuration also plays a critical role in determining enclave performance. Enclaves are sensitive to memory availability; increasing memory capacity typically improves performance by reducing page faults and improving cache locality. However, fragmented memory regions may require multiple PMP entries to define non-contiguous areas, exacerbating system overhead. The trade-off between memory allocation and PMP usage must therefore be carefully managed. Exhaustion of PMP entries leads to severe performance degradation, as additional enclaves cannot be instantiated regardless of available CPU or memory resources.
 
 A crucial finding from our analysis is the scalability bottleneck introduced by the limited number of available PMP entries. In our setup, the maximum number of PMP entries is fixed at 16. Since each enclave requires at least one PMP entry to establish its isolated memory region—and more in fragmented cases—this limits the number of concurrent enclaves that can be instantiated. This is a significant concern in multi-tenant or high-concurrency environments where multiple enclaves may be required simultaneously.
