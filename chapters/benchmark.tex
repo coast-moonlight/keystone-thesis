@@ -913,13 +913,15 @@ Meanwhile, workloads such as \texttt{coremark} and \texttt{kyber.ke} appeared la
 
 Statistically, the overall average performance change per scaling step was a negative $-8.71\%$, with a median change of just $-0.51\%$. This gap between the mean and median indicates a skewed distribution, driven by a few strongly negative outliers (notably \texttt{kyber} and \texttt{dhrystone}) rather than uniform underperformance across all workloads.
 
-To rigorously assess the significance of these observed performance trends, we applied both parametric and non-parametric statistical tests across all configurations. Specifically, a one-way ANOVA test was used to evaluate mean differences between scaling levels (under the assumption of normality), while the Kruskal–Wallis test assessed distributional differences in a non-parametric manner. These results are visualized in Figure~\ref{fig:combined-analysis}.
+To rigorously assess the significance of these observed performance trends, we applied both parametric and non-parametric statistical tests across all configurations. Specifically, a one-way ANOVA test was used to evaluate mean differences between scaling levels (under the assumption of normality), while the Kruskal–Wallis test assessed distributional differences in a non-parametric manner. These results are visualized in Figure~\ref{fig:combined-analysis-updated}.
+
+%\footnote{The Kruskal-Wallis test was used alongside ANOVA to handle cases where group distributions violated normality assumptions, ensuring robustness in detecting group differences. Random Forest regression was applied in addition to linear models to address multicollinearity between hardware parameters (e.g., cores and memory), and to capture potential nonlinear relationships that linear regression may miss.}
 
 \begin{figure}[htbp]
 \centering
 
 % --- Subfigure (a): p-value Bar Chart ---
-\begin{subfigure}[t]{0.9\linewidth}
+\begin{subfigure}[t]{0.95\linewidth}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -969,47 +971,93 @@ To rigorously assess the significance of these observed performance trends, we a
 \end{tikzpicture}
 \caption{ANOVA and Kruskal-Wallis p-values for core and memory scaling. p-values below the $\alpha=0.05$ threshold (dashed line) indicate statistically significant effects.}
 \label{fig:anova-kruskal}
+\vspace{0.5em}
+{\footnotesize
+\noindent\parbox{\linewidth}{%
+\textit{Note: The Kruskal-Wallis test was included to address cases where normality assumptions were not met.}
+}
+}
 \end{subfigure}
 
-\vspace{1em}
+\vspace{1.5em}
 
-% --- Subfigure (b): Regression Table ---
-\begin{subfigure}[t]{0.9\linewidth}
+% --- Subfigure (b): Grouped R^2 Chart ---
+\begin{subfigure}[t]{0.95\linewidth}
 \centering
-\begin{threeparttable}
-\caption{Linear regression coefficients of performance on hardware parameters.}
-\label{tab:regression-coefs}
-\begin{tabular}{@{}l
-                S[table-format=7.3]
-                S[table-format=7.3]
-                S[table-format=7.3]
-                S[table-format=7.3]@{}}
-\toprule
-\textbf{Workload} & \textbf{Intercept} & \textbf{Cores Coef.} & \textbf{Memory Coef.} & \textbf{$R^2$} \\
-\midrule
-\texttt{coremark}     & 102.805  & -0.508  & 0.008  & 0.038 \\
-\texttt{coremark.ke}  & 122.474  & -2.970  & 0.007  & 0.071 \\
-\texttt{dhrystone}    & 52.178   & -19.627 & 0.151  & 0.282 \\
-\texttt{enclave.ke}   & 28.257   & 1.104   & -0.019 & 0.043 \\
-\texttt{kyber}        & 89.318   & -40.129 & 0.329  & 0.035 \\
-\texttt{kyber.ke}     & 42.219   & 0.824   & -0.029 & 0.070 \\
-\bottomrule
-\end{tabular}
-\begin{tablenotes}
-\footnotesize
-\item Coefficients reflect linear regression fits across scaling increments.
-\item Intercept approximates baseline performance; coefficients represent change per incremental unit of cores or memory.
-\item \( R^2 \) indicates model fit (explained variance); values near zero imply weak correlation.
-\end{tablenotes}
-\end{threeparttable}
-\caption*{}
+\begin{tikzpicture}
+\begin{axis}[
+    width=\linewidth,
+    height=7cm,
+    ybar,
+    bar width=10pt,
+    enlarge x limits=0.15,
+    ylabel={$R^2$ (interaction model)},
+    ymin=0, ymax=0.5,
+    ymajorgrids,
+    grid style=dashed,
+    symbolic x coords={coremark,coremark.ke,dhrystone,dhrystone.ke,kyber,kyber.ke},
+    xtick=data,
+    xticklabel style={rotate=30,anchor=east, font=\small},
+    font=\small,
+    legend style={at={(0.5,1.1)}, anchor=south, legend columns=2},
+    every node near coord/.append style={
+        font=\footnotesize,
+        rotate=90,
+        anchor=west,
+        /pgf/number format/fixed,
+        /pgf/number format/precision=2
+    },
+    nodes near coords
+]
+
+% Linear regression
+\addplot+[
+    pattern=north east lines, 
+    pattern color=black, 
+    draw=black, 
+    bar shift=-6pt
+] coordinates {
+    (coremark,0.04)
+    (coremark.ke,0.07)
+    (dhrystone,0.28)
+    (dhrystone.ke,0.04)
+    (kyber,0.33)
+    (kyber.ke,0.24)
+};
+
+% Random Forest
+\addplot+[
+    pattern=horizontal lines, 
+    pattern color=black, 
+    draw=black, 
+    bar shift=6pt
+] coordinates {
+    (coremark,0.07)
+    (coremark.ke,0.40)
+    (dhrystone,0.31)
+    (dhrystone.ke,0.24)
+    (kyber,0.36)
+    (kyber.ke,0.23)
+};
+
+\legend{Linear regression, Random Forest}
+\end{axis}
+\end{tikzpicture}
+\caption{Comparison of $R^2$ values from linear regression and random forest models across workloads. Higher values indicate better model fit.}
+\label{fig:r2_grouped}
+\vspace{0.5em}
+{\footnotesize
+\noindent\parbox{\linewidth}{%
+\textit{Note: Random Forest regression was included to address multicollinearity issues observed in linear models.}
+}
+}
 \end{subfigure}
 
-\caption{Statistical analysis of workload performance scaling. (a) ANOVA and Kruskal-Wallis tests evaluate whether core/memory scaling significantly affects performance. (b) Linear regression models estimate the effect magnitude and fit quality.}
-\label{fig:combined-analysis}
+\caption{Statistical analysis of workload performance scaling. (a) ANOVA and Kruskal-Wallis tests evaluate whether core/memory scaling significantly affects performance. (b) Regression models estimate the effect magnitude and fit quality.}
+%\caption*{\textit{Note: A Random Forest regressor was used to mitigate multicollinearity effects between CPU cores and memory capacity, offering a non-linear alternative to standard linear regression.}}
+\label{fig:combined-analysis-updated}
 \end{figure}
 
 As shown in Figure~\ref{fig:anova-kruskal}, none of the $p$-values from either ANOVA or Kruskal–Wallis testing fell below the $\alpha = 0.05$ significance threshold. This result indicates a lack of statistically significant performance variation across hardware scaling steps for all workloads tested, regardless of execution context. The regression coefficients in subfigure~(b) further reinforce this interpretation: the slopes for both core and memory scaling are near zero in most cases, with low \( R^2 \) values suggesting weak or no explanatory power.
 
 %In summary, while certain workloads demonstrate mild sensitivity to hardware scaling, these effects are neither statistically significant nor consistent across the benchmark suite. This finding has important implications for the design of secure embedded systems: namely, that simply increasing hardware capabilities—whether by adding cores or memory—does not guarantee improved performance under TEE constraints. Instead, performance tuning must consider software-level optimizations, workload characteristics, and the inherent cost model of enclave-based execution.
-
