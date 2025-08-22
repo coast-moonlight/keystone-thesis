@@ -38,7 +38,52 @@
     showstringspaces=false,
     tabsize=4
 }
+\lstdefinestyle{latexcode}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{blue}, % style for keywords
+  morekeywords={Kyber-512,Kyber-768,Kyber-1024}, % words to highlight
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{gray!70},
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  keepspaces=true,
+  tabsize=2,
+  captionpos=b
+}
 
+\lstdefinestyle{kemstyle}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{blue!60!black},
+  morekeywords={KeyGen,Encapsulate,Decapsulate},
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{gray!70},
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  keepspaces=true, % preserve spaces for alignment
+  tabsize=4,
+  captionpos=b
+}
+
+\lstdefinestyle{params}{
+  basicstyle=\ttfamily\small,
+  escapeinside={(*@}{@*)}, % allow LaTeX between (*@ and @*)
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{gray!70},
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  keepspaces=true,
+  tabsize=4,
+  captionpos=b
+}
 
 \tikzstyle{process} = [
     rectangle, rounded corners,

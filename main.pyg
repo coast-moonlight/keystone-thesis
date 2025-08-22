@@ -1,0 +1,7 @@
+\begin{itemize}
+    \item $n = 256$: polynomial degree
+    \item $k \in \{2, 3, 4\}$: number of polynomials (Kyber-512, 768, 1024)
+    \item $q = 3329$: prime modulus
+    \item $\eta_1, \eta_2$: bounds on error distributions
+    \item $d_u, d_v$: compression factors
+\end{itemize}
