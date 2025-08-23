@@ -7,6 +7,8 @@ All benchmarks were executed within an emulated environment configured for the R
 
 To assess the performance implications of enclave-based isolation, each benchmark was implemented as a standalone enclave application (referred to as an \textit{eapp}), accompanied by a corresponding host application responsible for enclave lifecycle management. The host application, running in user space, handles enclave initialization, benchmark loading, invocation of enclave entry points, and inter-domain communication via edge calls. In contrast, the enclave application is fully isolated by the Keystone runtime and contains only the benchmark logic and associated data structures. This strict separation ensures that the same benchmark codebase can be executed both natively (without isolation) and securely (within an enclave), without requiring structural changes—thus enabling a fair and consistent comparative analysis.
 
+The experimental procedure followed a systematic pipeline, outlined in Figure~\ref{fig:benchmarking-swimlane}, beginning with benchmark selection and system configuration, followed by dual-mode execution (native and enclave), and concluding with metric collection and comparative analysis.
+
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
@@ -80,70 +82,32 @@ The experimental setup was designed to enable reliable, repeatable evaluation of
 
 QEMU, an open-source hardware emulator, was configured to emulate the RV64GC (64-bit general-purpose) RISC-V architecture, fully compatible with Keystone’s software stack. This choice reflects Keystone’s target deployment on modern RISC-V platforms and allows access to enclave memory protection and privilege separation features managed by the Keystone Security Monitor. Ubuntu 22.04 LTS was selected for its long-term support, stability, and compatibility with the Keystone development toolchain, serving as a robust platform for building all components including the QEMU binary, Keystone kernel driver, runtime, and benchmark binaries.
 
+Figure~\ref{fig:integrated_two_column_peripherals_below} provides a unified representation of the development workflow and the virtualized execution environment used in this thesis. On the left, the build process begins with the Keystone source code and proceeds through root filesystem generation via Buildroot, orchestration of key components through a \texttt{Make}-based system, and culminates in the launch of the full system within a QEMU-emulated RV64GC RISC-V platform. On the right, the runtime stack is depicted in detail: Ubuntu 22.04 LTS acts as the host operating system, supporting QEMU, which emulates the Keystone stack—including the Security Monitor, runtime, and enclave applications.
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    node distance=1.2cm and 1.5cm,
-    every node/.style={
+    font=\scriptsize,
+    node distance=0.8cm and 1.0cm,
+    box/.style={
         draw,
         rounded corners,
-        align=center,
-        font=\small,
-        minimum width=2.8cm,
-        minimum height=1.2cm,
         fill=gray!15,
-        drop shadow={shadow xshift=0.5ex,shadow yshift=-0.5ex,opacity=0.1}
+        minimum width=3.6cm,
+        minimum height=0.9cm,
+        align=center
+    },
+    stack/.style={
+        draw,
+        rounded corners,
+        fill=gray!15,
+        minimum width=3.0cm,
+        minimum height=0.9cm,
+        align=center
     },
     keystone/.style={
         fill=white,
         thick,
-        minimum width=3.5cm,
-        drop shadow={shadow xshift=0.8ex,shadow yshift=-0.8ex,opacity=0.2}
-    },
-    connector/.style={
-        ->,
-        thick,
-        >=stealth,
-        line width=0.6pt
-    }
-]
-
-% Nodes
-\node (host) [fill=gray!30, minimum height=1.4cm] {Ubuntu 22.04 LTS\\ Host OS};
-\node (qemu) [below=of host] {QEMU RV64GC Emulator};
-\node (keystone) [keystone, below=of qemu] {Keystone Stack\\ \footnotesize Security Monitor, Runtime, Enclaves};
-\node (virtio) [fill=gray!20, left=2cm of keystone] {VirtIO Devices\\ (net, storage)};
-\node (plugin) [fill=gray!20, right=2cm of keystone] {Optional Cache Plugin};
-
-% Edges
-\draw[connector] (host) -- (qemu);
-\draw[connector] (qemu) -- (keystone);
-\draw[connector] (virtio) -- (keystone);
-\draw[connector] (plugin) -- (keystone);
-
-% Annotation
-\node[font=\scriptsize, anchor=south west] at ([xshift=0.3cm,yshift=0.3cm]host.north west) {SSH/GDB access from Host};
-
-\end{tikzpicture}
-\caption{Overall virtualized testbed architecture illustrating the host OS, QEMU emulator, Keystone stack, and peripheral components such as VirtIO devices and optional cache plugin.}
-\label{fig:virtualized_testbed_architecture}
-\end{figure}
-
-
-The build process utilizes a combination of \texttt{Make} and Buildroot. Buildroot generates the embedded Linux root filesystem, cross-compiles necessary system libraries, and configures the Linux kernel running inside the QEMU guest. The Make-based system orchestrates compilation and deployment of Keystone components such as the runtime, Security Monitor, and kernel modules, ensuring reproducible builds targeting the QEMU RV64 environment.\footnote{Key configuration parameters include the QEMU platform, RV64 CPU architecture, and Buildroot settings optimized for Keystone enclave support.}
-
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-    node distance=1.5cm,
-    every node/.style={
-        draw,
-        rounded corners,
-        fill=gray!15,
-        font=\small,
-        minimum width=6cm,
-        minimum height=1.2cm,
-        align=center
+        minimum width=3.0cm
     },
     arrow/.style={
         ->,
@@ -151,27 +115,52 @@ The build process utilizes a combination of \texttt{Make} and Buildroot. Buildro
         >=stealth
     }
 ]
-% Nodes
-\node (src) {Source Code \\ Keystone, Kernel, Applications};
-\node (buildroot) [below=of src] {Buildroot \\ Rootfs + Kernel};
-\node (make) [below=of buildroot] {Make Orchestration \\ Keystone Runtime + Security Monitor};
-\node (launch) [below=of make] {QEMU Launch};
-\node (bench) [below=of launch] {Run Enclave / Benchmark};
 
-% Arrows
+% --- Left column: Build & Deployment Workflow ---
+\node (src) [box] {Source Code \\ Keystone, Kernel, Apps};
+\node (buildroot) [box, below=of src] {Buildroot \\ Rootfs + Kernel};
+\node (make) [box, below=of buildroot] {Make Orchestration};
+\node (launch) [box, below=of make] {QEMU Launch};
+\node (bench) [box, below=of launch] {Run Enclave / Benchmark};
+
 \foreach \from/\to in {src/buildroot, buildroot/make, make/launch, launch/bench} {
     \draw[arrow] (\from) -- (\to);
 }
+
+% --- Right column: Testbed Stack ---
+\node (host) [stack, fill=gray!30, minimum height=1.1cm, right=5.0cm of src] {Ubuntu 22.04 LTS\\ Host OS};
+\node (qemu) [stack, below=of host] {QEMU RV64GC Emulator};
+\node (keystone) [stack, keystone, below=of qemu] {Keystone Stack\\ \footnotesize Sec. Monitor, Runtime, Enclaves};
+
+% Peripherals BELOW Keystone, side-by-side
+\node (virtio) [stack, fill=gray!20, below left=0.5cm and 0.5cm of keystone.south] {VirtIO Devices};
+\node (plugin) [stack, fill=gray!20, below right=0.5cm and 0.5cm of keystone.south] {Cache Plugin};
+
+% Testbed arrows
+\draw[arrow] (host) -- (qemu);
+\draw[arrow] (qemu) -- (keystone);
+\draw[arrow] (keystone.south) -- ++(0,-0.25) -| (virtio.north);
+\draw[arrow] (keystone.south) -- ++(0,-0.25) -| (plugin.north);
+
+% Cross-links from workflow to stack (no intersection)
+\draw[arrow, dashed] (launch.east) -- ++(0.8,0) |- (qemu.west);
+\draw[arrow, dashed] (bench.east)  -- ++(1.2,0) |- (keystone.west);
+
+% Annotation
+\node[font=\tiny, anchor=south west] at ([xshift=0.15cm,yshift=0.15cm]host.north west) {SSH/GDB access};
+
 \end{tikzpicture}
-\caption{Build and deployment workflow from source code to running enclave and benchmark execution.}
-\label{fig:build_deployment_workflow}
+\caption{Overview of the build workflow and virtualized Keystone testbed. The left column shows the step-by-step process of building and launching enclave applications, starting from source code to benchmark execution. The right column depicts the runtime testbed architecture on Ubuntu using QEMU for RISC-V emulation, including the Keystone software stack and supporting peripheral modules (VirtIO and cache plugin). Dashed arrows indicate execution-stage linkage between build steps and their corresponding runtime components.}
+\label{fig:integrated_two_column_peripherals_below}
 \end{figure}
 
+The design supports modular and reproducible deployment. Peripheral components such as VirtIO devices and an optional cache plugin are attached beneath the enclave runtime, enabling I/O functionality and microarchitectural performance instrumentation. Dashed arrows visually link specific build stages to their corresponding runtime targets, providing a clear and traceable path from compilation to execution. This integration highlights how the build system and execution environment are tightly coupled to support secure enclave development and testing.\footnote{Key configuration parameters include the QEMU platform target, RV64GC architecture, and Buildroot settings customized for Keystone compatibility.}
 
-Launching the virtualized system is managed through a Makefile-driven workflow defined in the \texttt{run.mk} file, which encapsulates QEMU configuration and execution commands. Several runtime parameters are exposed as Makefile variables for flexibility, including:
-
+Launching the system is handled via a Makefile-based interface, which wraps QEMU commands with tunable runtime parameters. The most relevant configuration variables and their default values are summarized in Table~\ref{tab:qemu-params}, including RAM size, core count, and SSH port mapping.
 \begin{table}[h]
 \centering
+\caption{Key QEMU launch parameters and defaults.}
+\label{tab:qemu-params}
 \begin{tabular}{l l p{6cm}}
 \toprule
 \textbf{Parameter} & \textbf{Default} & \textbf{Description} \\
@@ -182,14 +171,10 @@ QEMU\_RAM\_SIZE & 128M & Emulated RAM size \\
 QEMU\_CORE\_COUNT & 2 & Number of virtual CPU cores \\
 \bottomrule
 \end{tabular}
-\caption{Key QEMU launch parameters and defaults.}
 \end{table}
 
-
-QEMU is launched with flags specifying the machine type (\texttt{virt}), boot ROM and firmware, kernel and root filesystem images, VirtIO devices for block storage and networking, and network forwarding for SSH access. Optionally, a cache plugin \cite{mandour2021cache} can be enabled to provide detailed logging of cache events such as hits, misses, and evictions. This plugin offers deeper insight into the memory hierarchy’s behavior during enclave execution, aiding analysis of performance impacts due to cache and memory isolation overhead.
-
-The cache plugin \cite{mandour2021cache} parameters are fully configurable at runtime, including:
-
+Optionally, the cache plugin~\cite{mandour2021cache} can be integrated into the QEMU runtime. This plugin enables logging of cache events—such as hits, misses, and evictions—and is particularly useful when analyzing memory performance of the overall system. Its configuration options are shown in Listing~\ref{lst:cache_config}.
+%\vspace{5em}
 \begin{lstlisting}[language=bash,caption={Configuration options for cache simulation},label={lst:cache_config}]
 # Instruction cache parameters
 icachesize=SIZE         # Size of instruction cache
@@ -212,34 +197,31 @@ cores=N_CORES           # Number of cores to monitor
 \end{lstlisting}
 
 
-For example, to configure the cache plugin with 8 KB L1 instruction and data caches, 64-byte blocks, 4-way associativity, 2 cores, and LRU eviction, the following command is used:
+For example, Listing~\ref{lst:cache_cmd} demonstrates how to configure an L1 cache setup at runtime.
 
-\begin{lstlisting}
+\begin{lstlisting}[language=bash, caption={Configuration command for cache plugin}, label={lst:cache_cmd}]
 make QEMU_PLUGIN_ARGS="dcachesize=8192,dassoc=4,dblksize=64, \
 icachesize=8192,iassoc=4,iblksize=64,cores=2,evict=lru" run
 \end{lstlisting}
 
 While the plugin logs comprehensive cache activity, it cannot isolate cache events exclusively caused by enclave operations. Therefore, cache data interpretation requires caution when attributing performance effects specifically to enclaves.
 
-Debugging support is available by enabling the \texttt{KEYSTONE\_DEBUG} flag, which starts QEMU’s built-in GDB server and halts execution at startup for remote debugging. After booting the QEMU guest, the Keystone kernel driver is loaded manually using:
+For kernel-level enclave debugging, QEMU’s built-in GDB server can be activated via the \texttt{KEYSTONE\_DEBUG} flag. Once the system boots, the Keystone kernel driver is loaded manually using the command in Listing~\ref{lst:modprobe}.
 
-
-\begin{lstlisting}
+\begin{lstlisting}[language=bash, caption={Loading the Keystone kernel driver}, label={lst:modprobe}]
 modprobe keystone-driver
 \end{lstlisting}
 
 This step initializes enclave functionality, allowing benchmark binaries to be securely loaded and executed within isolated memory regions managed by the Security Monitor.
 
-Additional Makefile targets enable remote command execution over SSH and connection to the RISC-V GDB debugger for low-level inspection of enclave state. Debugging requires recompiling Keystone with debugging enabled, typically invoked as:
+In debugging scenarios, the Makefile target \texttt{debug-connect} can be used to attach a GDB session to the running guest. A full debugging session typically starts as shown in Listing~\ref{lst:debug}.
 
-\begin{lstlisting}
+\begin{lstlisting}[language=bash, label={lst:debug}, caption={Starting a QEMU session with GDB debugging enabled}]
 KEYSTONE_DEBUG=y make run
 make debug-connect
 \end{lstlisting}
 
 QEMU’s built-in GDB server provides visibility into registers, memory, and exceptions, aiding low-level inspection and troubleshooting of enclave operations.
-
-
 
 Overall, this integrated virtualized environment and build system provide a flexible, controlled platform for detailed evaluation of Keystone’s performance and security properties. The modular Makefile-driven workflow streamlines configuration, deployment, and debugging, enabling efficient development and benchmarking without dependence on physical hardware. %Further technical details on build dependencies and configuration options are documented in the \textbf{Appendix}.
 
@@ -248,9 +230,11 @@ Overall, this integrated virtualized environment and build system provide a flex
 
 To comprehensively evaluate the performance characteristics of cryptographic workloads within a trusted execution environment, this study incorporates the Kyber key encapsulation mechanism (KEM), a lattice-based post-quantum cryptographic primitive. Kyber has garnered significant attention as a leading candidate in the NIST post-quantum cryptography standardization process, offering a robust balance of security, performance, and suitability for deployment on resource-constrained devices. Its integration within a secure enclave environment highlights the practical implications of deploying advanced cryptographic primitives where hardware-based isolation is critical for protecting sensitive operations and data.
 
-The Kyber implementation employed in this work is derived from a well-maintained, lightweight C reference library, chosen for its portability and compatibility with embedded systems. This implementation was integrated into the Keystone enclave framework with minimal modification to preserve fidelity to the original cryptographic routines and avoid introducing artifacts that might bias performance measurement. Both the IND-CPA (indistinguishability under chosen-plaintext attack) and IND-CCA (indistinguishability under chosen-ciphertext attack) variants of Kyber were considered, with the primary cryptographic operations — key generation, encapsulation, and decapsulation — being individually invoked inside the enclave to facilitate granular performance profiling.
+The Kyber implementation employed in this work is derived from a lightweight, standards-compliant C reference library, selected for its portability and compatibility with embedded systems. This implementation was integrated into the Keystone enclave framework with minimal modification to preserve the correctness and performance characteristics of the original routines, while avoiding structural changes that might distort measurement fidelity. 
 
-The following critical Kyber functions were separately instrumented and timed to capture their distinct computational demands:
+Both the IND-CPA (indistinguishability under chosen-plaintext attack) and IND-CCA (indistinguishability under chosen-ciphertext attack) security models were considered. For performance profiling, the core cryptographic routines—key generation, encapsulation, and decapsulation—were individually invoked within the enclave. This allowed for fine-grained instrumentation and measurement of each function’s runtime behavior under enclave-induced constraints.
+
+The specific functions evaluated are shown in Listing~\ref{lst:kyber_api}, grouped by security level:
 
 \begin{lstlisting}[language=bash,caption={Kyber cryptographic API functions},label={lst:kyber_api}]
 indcpa_keypair   # Key pair generation for IND-CPA variant
@@ -287,6 +271,7 @@ To complement Dhrystone and gain insight into more complex system behavior, the 
 
 The CoreMark version used in this study was sourced from the SiFive repository on GitHub\footnote{\url{https://github.com/sifive/benchmark-coremark}, accessed August 2025}, providing a RISC-V-optimized build compatible with Keystone. Like Dhrystone, CoreMark was run in both native and enclave modes, with results reported as "Iterations Per Second" (IPS), indicating how many complete benchmark runs occur per second. Because CoreMark combines arithmetic and memory operations, IPS delivers a more comprehensive view of system performance, reflecting both CPU and memory subsystem efficiency.
 
+As shown in Listing~\ref{lst:coremark-output}, the CoreMark benchmark outputs the number of iterations per second (IPS), which is a key metric for evaluating system performance.
 \begin{lstlisting}[language=bash, caption={CoreMark sample output used to extract IPS}, label={lst:coremark-output}]
 2K performance run parameters for coremark.
 CoreMark Size    : 666
@@ -316,42 +301,44 @@ Given the expansive parameter space created by the combination of memory size, c
 
 \begin{table}[h]
 \centering
+\caption{Summary of representative configurations used in performance evaluation.}
+\label{tab:configurations}
 \footnotesize
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|l|c|c|c|c|c|c|l|}
-\hline
+\begin{tabular}{lccccccl}
+\toprule
 \textbf{Configuration} & \textbf{RAM} & \textbf{Cores} & \textbf{Exec.} &
 \textbf{D‑Cache} & \textbf{I‑Cache} & \textbf{Policy} & \textbf{Assoc./Blk (D/I)} \\
-\hline
+\midrule
 Low‑End Baseline &
 64\,MB & 1 & Seq. &
 4\,KB & 4\,KB & LRU & 2‑way / 32B,\ 2‑way / 32B \\
-\hline
+%\hline
 Balanced Parallel &
 128\,MB & 2 & Par. &
 8\,KB & 8\,KB & FIFO & 4‑way / 64B,\ 4‑way / 64B \\
-\hline
+%\hline
 Mid‑Range Sequential &
 256\,MB & 4 & Seq. &
 16\,KB & 8\,KB & Random & 8‑way / 32B,\ 4‑way / 64B \\
-\hline
+%\hline
 High‑End Parallel &
 512\,MB & 6 & Par. &
 8\,KB & 16\,KB & LRU & 2‑way / 64B,\ 8‑way / 32B \\
-\hline
+%\hline
 Max Capacity Stress &
 2\,GB & 10 & Par. &
 32\,KB & 32\,KB & FIFO & 16‑way / 64B,\ 16‑way / 64B \\
-\hline
+\bottomrule
 \end{tabular}
-\caption{Summary of representative configurations used in performance evaluation.}
-\label{tab:configurations}
 \end{table}
 
 In preliminary testing, a wider range of system specifications was explored to ensure that the final selection of five configurations (Table~\ref{tab:configurations}) provided both diversity and coverage. Extreme cases—such as single‑core systems with disproportionately large memory or many‑core systems with severely limited memory—were excluded, as they tended to either underutilize resources or exhibit pathological behaviour (e.g., excessive paging or context‑switching) without yielding additional insight. For example, adding memory to a single‑core system had negligible impact due to CPU‑bound bottlenecks, whereas increasing core counts with insufficient memory frequently caused scheduler overhead and contention.
 
-In addition to varying memory capacity, core count, and execution mode (sequential or parallel), each configuration was paired with a distinct cache arrangement to assess the sensitivity of enclave and native workloads to cache architecture. The cache parameters are summarised in Table~\ref{tab:configurations} and include:
+In addition to varying memory capacity, core count, and execution mode (sequential or parallel), each configuration was paired with a distinct cache arrangement to assess the sensitivity of enclave and native workloads to cache architecture. The cache parameters are summarised in Table~\ref{tab:configurations} and Listing~\ref{lst:cache_profiles}. 
+
+These profiles were designed to represent common cache configurations found in embedded and general-purpose processors, ranging from small, low-associativity caches to larger, highly associative designs. The eviction policies (LRU, FIFO, Random) were selected to explore how different replacement strategies affect performance under varying workload characteristics.
 
 \begin{lstlisting}[language=bash,caption={Cache configuration profiles},label={lst:cache_profiles}]
 # Small caches
@@ -386,7 +373,9 @@ To reduce transient measurement noise and improve the robustness of collected da
 
 The primary performance metric collected was total wall-clock execution time, measured from within the guest Linux environment. For the Kyber benchmark, high-resolution timing was implemented explicitly using the \texttt{clock\_gettime()} function, which was integrated into the benchmark source code prior to compilation. In contrast, both Dhrystone and CoreMark include built-in timing and throughput reporting mechanisms as part of their standard distributions. Accordingly, benchmark-specific performance metrics were used where applicable: Dhrystone MIPS (DMIPS) for Dhrystone, and iterations per second for CoreMark. These metrics enabled more nuanced comparisons of workload efficiency across various enclave and system configurations.
 
-In addition to these high-level metrics, detailed system-level runtime statistics were gathered using standard Linux facilities such as the \texttt{getrusage()} system call. These included:
+In addition to these high-level metrics, detailed system-level runtime statistics were gathered using standard Linux facilities such as the \texttt{getrusage()} system call. 
+
+As shown in Listing~\ref{lst:getrusage}, this call provides insights into CPU time, memory usage, page faults, and context switching events. Collecting these indicators was crucial for diagnosing performance behaviors that could not be explained solely by execution time or throughput.
 
 % \begin{lstlisting}[language=bash]
 % # CPU time: Total time spent in user mode and kernel mode.

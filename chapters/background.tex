@@ -273,7 +273,7 @@ These parameters determine the number of polynomials, noise levels, and compress
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/kyber_768.png}
-\caption{Kyber-768 Key Exchange Algorithm.}
+\caption{Kyber-768 Key Exchange Algorithm \cite{Pathum_2025}}
 \label{fig:kyber_768}
 \end{figure}
 
@@ -292,16 +292,16 @@ Compared to classical schemes like RSA, Kyber offers more compact key and cipher
 \caption{Key and Ciphertext Sizes (bytes)}
 \label{tab:kyber_sizes}
 \renewcommand{\arraystretch}{1.2}
-\begin{tabular}{|l|c|c|c|}
-\hline
+\begin{tabular}{lccc}
+\toprule
 \textbf{Scheme} & \textbf{Private Key} & \textbf{Public Key} & \textbf{Ciphertext} \\
-\hline
+\midrule
 Kyber-512 & 1632 & 800 & 768 \\
 Kyber-768 & 2400 & 1184 & 1088 \\
 Kyber-1024 & 3168 & 1568 & 1568 \\
 RSA-3072 & 384 & 384 & 384 \\
 RSA-15360 & 1920 & 1920 & 1920 \\
-\hline
+\bottomrule
 \end{tabular}
 \end{table}
 
