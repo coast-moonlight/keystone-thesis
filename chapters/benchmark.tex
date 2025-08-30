@@ -16,12 +16,13 @@ The results presented in this chapter serve as the empirical foundation for the 
 
 To accurately assess the performance overheads imposed by secure enclave execution, it is imperative to begin with a rigorously characterized baseline: one that isolates application-level behavior from security mechanisms, scheduling anomalies, and hardware acceleration artifacts. This section documents such a baseline, derived from native (non-enclave) execution of representative workloads on a deterministic, single-core RISC-V simulation environment. All benchmarks were executed under the Low-End Baseline configuration, designed to approximate the resource constraints of a lightweight embedded platform: 64~MB of main memory, a single in-order RISC-V core, and no parallelism beyond sequential instruction issue. This environment intentionally excludes vector extensions, out-of-order speculation, and memory prefetching, ensuring that measured performance reflects algorithmic structure rather than microarchitectural opportunism.
 
-Each benchmark was executed both \emph{sequentially} and \emph{in parallel}, ten times each, and the resulting figures compare performance and stability across both modes.
+Each benchmark was executed both \emph{sequentially} and \emph{in parallel}, ten times each, allowing us to evaluate both baseline performance and parallel scalability, while repeated runs improve statistical reliability and reduce the influence of outliers.
 
+%The sequential runs (denoted \texttt{Run10\_SEQ}) executed a single instance of the workload in isolation, while the parallel runs (denoted \texttt{Run10}) launched multiple concurrent instances, with results merged to simulate a multi-threaded environment. This dual-mode execution provides insights into how well each workload scales with concurrency, as well as the overheads introduced by context switching and resource contention.
 % ------------------------
 % Wall-clock time figures
 % ------------------------
-Figure~\ref{fig:coremark_perf_comparison_log} reports CoreMark's performance profile using the latest data from Run~10 of both sequential and parallel execution modes. Execution time remained consistent, with the sequential case averaging approximately 101.17 seconds of wall-clock time and the parallel case averaging around 103.37 seconds. This corresponds to an effective throughput of about 988.4 iterations per second for the sequential run and 967.4 iterations per second for the parallel run. User-mode CPU time dominated in both cases (101.20 seconds sequential, 103.39 seconds parallel), accounting for over 99.9\% of total CPU time. System-mode CPU time was negligible (under 0.03 seconds), confirming that the workload’s operational footprint is almost entirely in user space with minimal reliance on system calls or kernel transitions.
+Figure~\ref{fig:coremark_perf_comparison_log} reports CoreMark's performance profile using the data from Run~10 of both sequential and parallel execution modes. Execution time remained consistent, with the sequential case averaging approximately 101.17 seconds of wall-clock time and the parallel case averaging around 103.37 seconds. This corresponds to an effective throughput of about 988.4 iterations per second for the sequential run and 967.4 iterations per second for the parallel run. User-mode CPU time dominated in both cases (101.20 seconds sequential, 103.39 seconds parallel), accounting for over 99.9\% of total CPU time. System-mode CPU time was negligible (under 0.03 seconds), confirming that the workload’s operational footprint is almost entirely in user space with minimal reliance on system calls or kernel transitions.
 
 \begin{figure}[htbp]
     \centering
@@ -77,10 +78,10 @@ Figure~\ref{fig:coremark_perf_comparison_log} reports CoreMark's performance pro
             (Voluntary\ CS,0.90)
             (Involuntary\ CS,350.40)
         };
-        \legend{Run10, Run10\_SEQ}
+        \legend{Parallel, Sequential}
         \end{axis}
         \end{tikzpicture}
-        \caption{Log‑scale comparison of all key metrics for CoreMark 64M\_1Core: Run10 vs Run10\_SEQ.}
+        \caption{Log‑scale comparison of all key metrics for CoreMark 64M\_1Core: Parallel vs Sequential.}
         \label{fig:coremark_perf_comparison_log}
     \end{subfigure}
 
@@ -141,38 +142,23 @@ Figure~\ref{fig:coremark_perf_comparison_log} reports CoreMark's performance pro
             (\(\mu s\)/Run,0.50)
             (DPS,998646.70)
         };
-        \legend{Run10, Run10\_SEQ}
+        \legend{Parallel, Sequential}
         \end{axis}
         \end{tikzpicture}
-        \caption{Log‑scale comparison of all key metrics for Dhrystone 64M\_1Core: Run10 vs Run10\_SEQ.}
+        \caption{Log‑scale comparison of all key metrics for Dhrystone 64M\_1Core: Parallel vs Sequential.}
         \label{fig:dhrystone_perf_comparison_log}
     \end{subfigure}
-    \caption{Comparison of CoreMark and Dhrystone benchmark performance metrics (log-scale) under Run10 and Run10\_SEQ modes.}
+    \caption{Comparison of CoreMark and Dhrystone benchmark performance metrics (log-scale) under Parallel and Sequential modes.}
 \end{figure}
 
-% ------------------------
-% CPU time figures
-% ------------------------
 Memory behavior was stable and well within constraints, with peak resident set size (RSS) at 1692~KB for the sequential run and 1712~KB for the parallel run—both well below the 64~MB memory cap. This indicates that the benchmark’s data and code footprint remained fully cacheable, without triggering paging or dynamic memory expansion. Minor page faults were low and consistent (82--84 for sequential, 82--85 for parallel), though a single major page fault was observed in the parallel run and two in the sequential run, suggesting rare but possible demand paging during lazy allocation. Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case. This disparity reflects a significantly higher degree of preemption or timer interrupts in the parallel workload environment.
 
-% ------------------------
-% Throughput figures
-% ------------------------
 Figure~\ref{fig:dhrystone_perf_comparison_log} presents detailed results from the Dhrystone benchmark under native conditions. The sequential runs exhibited an average elapsed time of approximately 101.2 seconds per run, with user-mode CPU time closely matching this figure, indicating near-total CPU utilization. In contrast, the parallel merged runs completed in roughly 103.4 seconds, with user CPU time again nearly equal to wall-clock time. Throughput, measured in Dhrystone operations per second (DPS), was higher in the sequential case—approximately 988.4~DPS versus 967.4~DPS in the parallel configuration—reflecting slight scheduling overhead from virtual concurrency under QEMU.
 
-% ------------------------
-% Memory usage figures
-% ------------------------
 Memory footprint remained small (peak RSS ~1.7~MB) and stable, with 82--86 minor page faults per run.
 
-% ------------------------
-% Context switches figures
-% ------------------------
 Voluntary context switches were minimal (0--1 sequential, 0--3 parallel), while involuntary context switches showed a stark contrast: approximately 350 in the sequential case versus over 25,800 in the parallel case.
 
-% ------------------------
-% Cycle counts figures (Kyber only)
-% ------------------------
 Kyber performance was evaluated using the official \texttt{test\_speed512} binary from the reference implementation's \texttt{ref/} directory.\footnote{See \url{https://github.com/pq-crystals/kyber}. The \texttt{test\_speed512} tool benchmarks key operations using emulated cycle counters in QEMU.} Figure~\ref{fig:kyber_median_cycles_chart_log} presents the median cycle counts for each cryptographic operation, comparing both sequential and parallel enclave execution.
 
 % \begin{figure}[htbp]
@@ -242,7 +228,7 @@ All cryptographic operations executed entirely in user space, without invoking p
 \label{fig:kyber_median_cycles_chart_log}
 \end{figure}
 
-Across all three workloads, cache behavior was uniformly stable. Monitoring via QEMU’s cache plugin confirmed low instruction and data cache miss rates, consistent with compact memory footprints and tight loop-local access patterns. Instruction cache performance benefited from small binary sizes and the absence of dynamic control flow, while data cache pressure remained minimal due to statically sized inputs and short-lived stack allocations. These characteristics consistently indicate compute-bound, not memory-bound, behavior in the native case.
+Across all three workloads, cache behavior was stable. QEMU's cache plugin confirmed low instruction and data cache miss rates, reflecting compact memory footprints and tight loop-local access patterns. Instruction streams were \emph{cache-friendly}, thanks to small binaries and predictable control flow, while data cache pressure remained minimal due to static inputs and short-lived stack allocations. This indicates that the workloads are primarily compute-bound rather than memory-bound.
 
 Together, these results confirm that the native execution environment offers a low-noise, deterministic baseline across benchmarks. Variability was minimal, CPU time aligned closely with wall-clock time, memory remained well-bounded, and system-level interference was negligible—making this configuration ideal for isolating performance effects introduced in subsequent secure or enclave-based execution modes.
 
@@ -512,10 +498,10 @@ The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times av
             (Voluntary\ CS,49)
             (Involuntary\ CS,65992)
         };
-        \legend{Native (Run10\_SEQ), Enclave (Run10\_SEQ)}
+        \legend{Native (Sequential), Enclave (Sequential)}
         \end{axis}
         \end{tikzpicture}
-        \caption{Log-scale comparison of Dhrystone 64M\_1Core: Native vs Enclave (Run10\_SEQ).}
+        \caption{Log-scale comparison of Dhrystone 64M\_1Core: Native vs Enclave (Sequential).}
         \label{fig:dhrystone_native_vs_enclave_log}
     \end{subfigure}
 
@@ -583,7 +569,7 @@ The Dhrystone benchmark demonstrated a similar pattern, with wall-clock times av
         (Voluntary\ CS,49.00)
         (Involuntary\ CS,65992.00)
     };
-    \legend{Native (Run10\_SEQ avg), Enclave (Run10\_SEQ avg)}
+    \legend{Native (Sequential avg), Enclave (Sequential avg)}
     \end{axis}
     \end{tikzpicture}
     \caption{Log-scale comparison of key metrics for CoreMark 64M\_1Core: Native vs Enclave (averaged over 10 runs).}
@@ -662,7 +648,7 @@ CoreMark enclave runs averaged 107 seconds wall-clock time—about 1.05$\times$ 
         \legend{Enclave Run10\_SEQ, Enclave Run5*}
         \end{axis}
         \end{tikzpicture}
-        \caption{Log-scale comparison of Dhrystone Enclave (KE): Run10\_SEQ vs Run5*.\\
+        \caption{Log-scale comparison of Dhrystone Enclave: Sequential vs Parallel (5 Runs)*.\\
         \textit{* Run5 includes only partial runs (others failed).}}
         \label{fig:dhrystone_ke_runs_comparison}
     \end{subfigure}
@@ -734,7 +720,7 @@ CoreMark enclave runs averaged 107 seconds wall-clock time—about 1.05$\times$ 
         \legend{Run10\_SEQ, Run5*}
         \end{axis}
         \end{tikzpicture}
-        \caption{Log-scale comparison of CoreMark Enclave (KE) performance: Run10\_SEQ vs Run5*.\\
+        \caption{Log-scale comparison of CoreMark Enclave performance: Sequential vs Parallel (5 Runs)*.\\
         \textit{* Run5 includes only 3 out of 5 completed runs. Runs 4 and 5 failed.}}
         \label{fig:coremark_ke_runs_comparison}
     \end{subfigure}
@@ -847,7 +833,13 @@ coordinates {
     hide x axis,
     axis y line*=right,
     axis x line=none,
-    bar shift=10pt
+    bar shift=10pt,
+    clip=false, % allows legend outside the plot
+    legend style={
+        at={(0.5,1.05)}, % relative to the axis
+        anchor=south,
+        legend columns=1
+    }
 ]
 \addplot[pattern=north east lines,pattern color=black] 
     coordinates {(Kyber,66000) (Dhrystone,66000) (CoreMark,66000)};
@@ -875,7 +867,7 @@ For enclave-protected variants—\texttt{coremark.ke}, \texttt{enclave.ke}, and 
 
 Building on the preceding workload-specific performance analysis, we now examine how the availability of additional hardware resources—specifically CPU cores and physical memory—affects execution performance across native and enclave workloads on our constrained RISC-V platform. In conventional computing environments, such scaling is often assumed to yield linear or super-linear performance gains. However, embedded systems with secure enclaves (TEEs) operate under very different architectural and runtime constraints. Synchronization overheads, limited memory bandwidth, context-switching penalties, and enclave entry/exit costs all contribute to the complex performance dynamics of these systems.
 
-To investigate this, we performed a systematic evaluation of six representative workloads spanning both native and secure execution modes: \texttt{coremark}, \texttt{coremark.ke}, \texttt{dhrystone}, \texttt{enclave.ke}, \texttt{kyber}, and \texttt{kyber.ke}. Each workload was benchmarked across multiple hardware configurations, incrementally increasing the number of CPU cores and the amount of available physical memory. Performance was quantified as relative throughput (operations per second), normalized across scaling steps to isolate the impact of hardware changes.
+To investigate this, we performed a systematic evaluation of six representative workloads spanning both native and secure execution modes: \texttt{coremark}, \texttt{dhrystone}, and \texttt{kyber} (native execution), as well as \texttt{coremark.ke}, \texttt{dhrystone.ke}, and \texttt{kyber.ke} (executed within a Keystone enclave). Each workload was benchmarked across multiple hardware configurations, incrementally increasing the number of CPU cores and the amount of available physical memory. Performance was quantified as relative throughput (operations per second), normalized across scaling steps to isolate the impact of hardware changes.
 
 Table~\ref{tab:hardware-impact} presents a high-level summary of the results. For each scaling axis (cores and memory), we classify workloads based on their observed performance response—whether they improved, degraded, or remained effectively unchanged. In addition, we report the average performance change per scaling increment, aggregated across all workloads.
 
@@ -1058,6 +1050,6 @@ To rigorously assess the significance of these observed performance trends, we a
 \label{fig:combined-analysis-updated}
 \end{figure}
 
-As shown in Figure~\ref{fig:anova-kruskal}, none of the $p$-values from either ANOVA or Kruskal--Wallis testing fell below the $\alpha = 0.05$ significance threshold. This indicates a lack of statistically significant performance variation across hardware scaling steps for all workloads tested. The $R^2$ values in subfigure~\ref{fig:r2_grouped} support this, with low model fit observed in both linear and Random Forest regressions, suggesting weak or no explanatory power.
+As shown in Figure~\ref{fig:anova-kruskal}, none of the $p$-values from ANOVA or Kruskal--Wallis testing fell below $\alpha = 0.05$, indicating no statistically significant performance variation across hardware scaling steps. The $R^2$ values in subfigure~\ref{fig:r2_grouped} support this, with low fit in both linear and Random Forest regressions, suggesting weak or no explanatory power.
 
 %In summary, while certain workloads demonstrate mild sensitivity to hardware scaling, these effects are neither statistically significant nor consistent across the benchmark suite. This finding has important implications for the design of secure embedded systems: namely, that simply increasing hardware capabilities—whether by adding cores or memory—does not guarantee improved performance under TEE constraints. Instead, performance tuning must consider software-level optimizations, workload characteristics, and the inherent cost model of enclave-based execution.

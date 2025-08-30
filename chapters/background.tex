@@ -3,9 +3,9 @@
 
 The Keystone framework is founded on the RISC-V instruction set architecture (ISA), which provides a compelling platform for secure system design due to its open specification and extensible modularity~\cite{Lee2019,Lee2019}. Unlike traditional ISAs governed by proprietary vendors, RISC-V fosters a collaborative ecosystem that supports community-driven enhancements and custom extensions. This openness uniquely positions RISC-V as a prime candidate for trusted computing research and development~\cite{Survey2023}. Furthermore, its well-defined privilege model facilitates the construction of robust isolation mechanisms, which are essential for implementing Trusted Execution Environments (TEEs).\footnote{For an in-depth exposition of RISC-V privilege modes and PMP, see the RISC-V Privilege Specification v1.10~\cite{keystone2025how}.}
 
-RISC-V specifies three hierarchical privilege levels: user mode (U-mode), supervisor mode (S-mode), and machine mode (M-mode). M-mode operates with the highest privilege and possesses unrestricted access to hardware resources, managing critical functions such as interrupt handling, exception processing, and physical memory protection~\cite{Lee2019}. Keystone capitalizes on this privilege hierarchy by situating its Security Monitor (SM)—the core Trusted Computing Base (TCB)—within M-mode. The SM is responsible for managing enclaves, enforcing strict memory isolation, and mediating access to sensitive operations. By anchoring the TCB at this highest privilege level, Keystone minimizes the trusted surface exposed to potential attackers.
+RISC-V specifies three hierarchical privilege levels: user mode (U-mode), supervisor mode (S-mode), and machine mode (M-mode). M-mode operates with the highest privilege and possesses unrestricted access to hardware resources, managing critical functions such as interrupt handling, exception processing, and physical memory protection~\cite{Lee2019}. Keystone capitalizes on this privilege hierarchy by situating its Security Monitor (SM)—the Trusted Computing Base (TCB)—within M-mode. The Security Monitor manages enclaves and enforces memory isolation, while the runtime handles routine memory management and access mediation. By anchoring the TCB at this highest privilege level, Keystone minimizes the trusted surface exposed to potential attackers.
 
-A key hardware feature leveraged by Keystone is the Physical Memory Protection (PMP) unit, introduced in the RISC-V Privilege Specification v1.10. PMP empowers M-mode software to define fine-grained access permissions for physical memory regions, specifying which lower privilege levels (U and S) may read, write, or execute code therein~\cite{keystone2025how}. This hardware-enforced mechanism forms the cornerstone of Keystone’s memory isolation strategy. Each enclave is assigned a dedicated, PMP-protected memory region that remains inaccessible to the host OS or unauthorized software, guaranteeing strong confidentiality and integrity guarantees enforced at the hardware level~\cite{Lee2019}.
+A key hardware feature leveraged by Keystone is the Physical Memory Protection (PMP) unit, introduced in the RISC-V Privilege Specification v1.10 \cite{keystone2025how}. PMP empowers M-mode software to define fine-grained access permissions for physical memory regions, specifying which lower privilege levels (U and S) may read, write, or execute code therein~\cite{keystone2025how}. This hardware-enforced mechanism forms the cornerstone of Keystone’s memory isolation strategy. Each enclave is assigned a dedicated, PMP-protected memory region that remains inaccessible to the host OS or unauthorized software, guaranteeing strong confidentiality and integrity guarantees enforced at the hardware level~\cite{Lee2019}.
 
 In addition to PMP, RISC-V’s flexible trap and exception handling model enables M-mode to intercept all traps while optionally delegating certain classes, such as system calls and page faults, to S-mode for efficiency~\cite{Lee2019}. This delegation mechanism facilitates cooperation between enclave runtimes and the host OS for memory management without compromising enclave boundaries. Keystone utilizes the RISC-V Memory Management Unit (MMU) to support private virtual address spaces per enclave, further fortified by PMP protections against unauthorized access or tampering~\cite{Lee2019}.
 
@@ -33,7 +33,7 @@ Commercially dominant TEE solutions include Intel Software Guard Extensions (SGX
     \draw[fill=gray!20] (2,0) rectangle (6,1.5) node[midway]{\textbf{Secure Monitor}};
     \draw[->,thick] (3,3.5) -- (5,3.5) node[midway,above]{\textbf{SMC}};
   \end{tikzpicture}
-  \caption{TrustZone's dual-world architecture with SMC-managed transitions.}
+  \caption{TrustZone's dual-world architecture with secure monitor calls (SMC)-managed transitions.}
   \label{fig:trustzone}
 \end{subfigure}
 \hfill
@@ -71,7 +71,7 @@ Table~\ref{tab:tee-comparison} summarizes key architectural and design distincti
 Privilege Model & Ring 3 enclaves & Secure Monitor & M-mode TCB \\
 Openness & Closed & Closed & Open \\
 Use Cases & Cloud security & Mobile security & Research, IoT \\
-Hardware Dependency & Intel CPUs & ARM SoCs & RISC-V \\
+Hardware Dependency & Intel CPUs & ARM SoCs & RISC-V + PMP \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,7 +84,7 @@ By integrating privilege separation, hardware-enforced memory protections, and m
 
 Keystone is an open-source Trusted Execution Environment (TEE) framework built on the RISC-V architecture, designed to enable customizable, lightweight, and secure enclaves suitable for both research and deployment in resource-constrained or security-critical settings \cite{Lee2019}. The framework’s modular design emphasizes a minimal Trusted Computing Base (TCB), portability across diverse RISC-V platforms, and extensibility to accommodate advanced security features, reflecting a clean and flexible architectural philosophy.
 
-Keystone leverages the multiple privilege modes defined by the RISC-V specification—user mode (U-mode), supervisor mode (S-mode), and machine mode (M-mode)—to enforce security policies effectively. At the core of Keystone’s TCB is the Security Monitor (SM), which executes in M-mode and holds exclusive authority over enclave lifecycle management, memory protection configuration, and access control enforcement. The SM uses RISC-V’s Physical Memory Protection (PMP) mechanism to isolate enclave memory regions dynamically, ensuring strict access controls during enclave execution \cite{Lee2019}.
+Keystone leverages the multiple privilege modes defined by the RISC-V specification—user mode (U-mode), supervisor mode (S-mode), and machine mode (M-mode)—to enforce security policies effectively. At the heart of Keystone’s TCB is the Security Monitor (SM), which executes in M-mode and holds exclusive authority over enclave lifecycle management, memory protection configuration, and access control enforcement. The SM uses RISC-V’s Physical Memory Protection (PMP) mechanism to isolate enclave memory regions dynamically, ensuring strict access controls during enclave execution \cite{Lee2019}.
 
 A typical Keystone-enabled platform comprises RISC-V cores augmented with secure boot mechanisms, trusted entropy sources, and optionally, hardware accelerators for cryptographic functions or secure I/O. Importantly, Keystone does not require hardware beyond standard RISC-V compliance and PMP support, making it adaptable to implementations ranging from FPGA prototypes to silicon SoCs \cite{Lee2019}.
 
@@ -123,12 +123,12 @@ To support secure communication and attestation, Keystone enclaves can integrate
 
 Physical Memory Protection (PMP) is a hardware-level security mechanism defined by the RISC-V privileged architecture to provide fine-grained control over access permissions to physical memory regions. PMP plays a central role in enabling secure system software, particularly in contexts where memory isolation between privileged and unprivileged software is essential. It is a critical enabler for implementing secure environments such as hypervisors, operating system kernels, and Trusted Execution Environments (TEEs) without relying on traditional virtualization support~\cite{riscvprivspec}.
 
-In RISC-V, the PMP mechanism is configured exclusively by machine-mode (M-mode) software—the most privileged execution level in the architecture—and applies access control policies to all lower-privileged software running in supervisor (S-mode) or user mode (U-mode). Each PMP entry defines a memory region along with a set of permissions (read, write, execute) and an addressing mode. The hardware enforces these permissions such that any access attempt by S-mode or U-mode software that violates a PMP rule results in a trap to M-mode. This mechanism ensures that M-mode retains full control over physical memory while being able to delegate controlled access to untrusted software layers~\cite{riscvprivspec,Lee2019}.
+In RISC-V, the Physical Memory Protection (PMP) mechanism is configured exclusively by machine-mode (M-mode) software—the most privileged execution level in the architecture—and applies access control policies to all lower-privileged software running in supervisor (S-mode) or user mode (U-mode). Each PMP entry defines a memory region along with a set of permissions (read, write, execute) and an addressing mode. The hardware enforces these permissions such that any access attempt by S-mode or U-mode software that violates a PMP rule results in a trap to M-mode. This mechanism ensures that M-mode retains full control over physical memory while being able to delegate controlled access to untrusted software layers~\cite{riscvprivspec,Lee2019}. Conceptually, M-mode software acts as a trusted monitor or security supervisor, responsible for configuring isolation policies and mediating access between different software privilege levels.
 The basic hardware architecture of PMP within the RISC-V privilege hierarchy is illustrated in Figure~\ref{fig:pmp-arch}.
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[node distance=2.5cm,>=Stealth]
+\begin{tikzpicture}[node distance=3cm,>=Stealth]
 \tikzstyle{block} = [draw, minimum width=3cm, minimum height=2cm, align=center, font=\small]
 
 \node[block, fill=gray!10] (cpu) {CPU Core\\\footnotesize Modes: M / S / U};
@@ -142,13 +142,27 @@ The basic hardware architecture of PMP within the RISC-V privilege hierarchy is 
 \label{fig:pmp-arch}
 \end{figure}
 
-A typical RISC-V core supports a fixed number of PMP entries (commonly 8 or 16), each represented by two Control and Status Registers (CSRs): \texttt{pmpcfg} and \texttt{pmpaddr}. The \texttt{pmpcfg} register specifies the access permissions and address matching mode for each region, while \texttt{pmpaddr} defines the address bounds. RISC-V supports several region encoding modes:
+A typical RISC-V core supports a fixed number of PMP entries (commonly 8 or 16) \cite{keystone2025how}, each represented by two Control and Status Registers (CSRs): \texttt{pmpcfg} and \texttt{pmpaddr}. The \texttt{pmpcfg} register specifies the access permissions and address matching mode for each region, while \texttt{pmpaddr} defines the address bounds. RISC-V supports several region encoding modes as shown in Table~\ref{tab:pmp-modes}, each with distinct trade-offs in terms of flexibility and granularity~\cite{riscvprivspec}.
 
-\begin{itemize}
-    \item \textbf{TOR (Top-of-Range):} Defines a region from the base address of the previous PMP entry up to the current address.
-    \item \textbf{NAPOT (Naturally Aligned Power-Of-Two):} Encodes both the base and size in a single register, enabling efficient representation of power-of-two-sized regions.
-    \item \textbf{NA4 (Naturally Aligned 4-byte):} Encodes a minimal 4-byte memory region.
-\end{itemize}
+% \begin{itemize}
+%     \item \textbf{TOR (Top-of-Range):} Defines a region from the base address of the previous PMP entry up to the current address.
+%     \item \textbf{NAPOT (Naturally Aligned Power-Of-Two):} Encodes both the base and size in a single register, enabling efficient representation of power-of-two-sized regions.
+%     \item \textbf{NA4 (Naturally Aligned 4-byte):} Encodes a minimal 4-byte memory region.
+% \end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{PMP address-matching modes.}
+\label{tab:pmp-modes}
+\begin{tabular}{@{}lp{9cm}@{}} % adjust 9cm to fit your layout
+\toprule
+\textbf{Mode} & \textbf{Description} \\ \midrule
+TOR   (Top-of-Range) & Defines a region from the base address of the previous PMP entry up to the current address. \\
+NAPOT (Naturally Aligned Power-of-Two) & Encodes both the base and size in a single register, enabling efficient representation of power-of-two-sized regions. \\
+NA4   (Naturally Aligned 4-byte) & Encodes a minimal 4-byte memory region. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 The design of PMP aligns with the minimalist and modular philosophy of RISC-V. Unlike traditional memory protection mechanisms such as x86's segmentation or ARM's TrustZone Address Space Controller (TZASC), PMP is simple, deterministic, and free from microarchitectural complexity. Importantly, PMP operates at the physical memory level—independent of virtual memory or page tables—which makes it highly suitable for systems with limited resources or without Memory Management Units (MMUs)~\cite{riscvprivspec,Survey2023}.
 
@@ -230,7 +244,7 @@ Despite its utility, PMP has several practical limitations. The fixed number of 
 \end{figure}
 
 
-Security researchers have explored various enhancements and formal models to increase the reliability and verifiability of PMP-based isolation. For example, Cerberus~\cite{lee2022cerberus} builds a formally verified memory-sharing abstraction over PMP to enable safe communication between enclaves and untrusted components. Similarly, HexBox~\cite{hexbox2018} leverages PMP for real-time embedded security by associating memory regions with specific control-flow paths in embedded firmware, demonstrating PMP's applicability beyond general-purpose computing.
+Security researchers have explored various enhancements and formal models to increase the reliability and verifiability of PMP-based isolation. For example, Cerberus~\cite{lee2022cerberus} builds a formally verified memory-sharing abstraction over PMP to enable safe communication between enclaves and untrusted components, while HexBox~\cite{hexbox2018} leverages PMP for real-time embedded security by associating memory regions with specific control-flow paths in firmware, demonstrating PMP's applicability beyond general-purpose computing. Beyond CPU-managed memory, \textbf{IOPMP} highlights that malicious or compromised I/O devices could also access physical memory, potentially undermining traditional PMP protections, making it essential to extend isolation mechanisms to cover I/O memory as well.
 Table~\ref{tab:pmp-limitations} summarizes key limitations in PMP and highlights recent research directions aimed at overcoming them.
 
 \begin{table}[htbp]
@@ -296,11 +310,11 @@ Compared to classical schemes like RSA, Kyber offers more compact key and cipher
 \toprule
 \textbf{Scheme} & \textbf{Private Key} & \textbf{Public Key} & \textbf{Ciphertext} \\
 \midrule
-Kyber-512 & 1632 & 800 & 768 \\
-Kyber-768 & 2400 & 1184 & 1088 \\
-Kyber-1024 & 3168 & 1568 & 1568 \\
-RSA-3072 & 384 & 384 & 384 \\
-RSA-15360 & 1920 & 1920 & 1920 \\
+\rowcolor{lightgray} Kyber-512 & 1632 & 800 & 768 \\
+\rowcolor{lightgray} Kyber-768 & 2400 & 1184 & 1088 \\
+\rowcolor{lightgray} Kyber-1024 & 3168 & 1568 & 1568 \\
+\rowcolor{darkgray} RSA-3072 & 384 & 384 & 384 \\
+\rowcolor{darkgray} RSA-15360 & 1920 & 1920 & 1920 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -441,7 +455,7 @@ ARM TrustZone operates using a dual-world model: a Secure World and a Normal Wor
 
 Keystone effectively synthesizes the strengths of these platforms while avoiding their limitations. It supports dynamic enclave creation spanning both user and supervisor modes, with security ensured via low-overhead Physical Memory Protection (PMP) and a lightweight, verifiable Security Monitor operating in M-mode \cite{Lee2019}. This design offers richer enclave functionality with reduced complexity.
 
-Empirical comparisons further highlight Keystone’s competitive performance. TS‑Perf, a systematic benchmarking framework, measured execution time across SGX, TrustZone, and RISC‑V Keystone using identical binaries and workloads (e.g., internal APIs, matrix operations, memory and storage access). It reports how architectural differences manifest in performance across ecosystems \cite{turn0search5}. As shown in Figure~\ref{fig:bench-compare}, Keystone achieves near-native performance on CPU-bound workloads and maintains a balanced profile across memory and I/O operations when compared to SGX and TrustZone.
+Empirical comparisons further highlight Keystone’s competitive performance. TS‑Perf \cite{suzaki2021tsperf}, a systematic benchmarking framework, measured execution time across SGX, TrustZone, and RISC‑V Keystone using identical binaries and workloads (e.g., internal APIs, matrix operations, memory and storage access). It reports how architectural differences manifest in performance across ecosystems \cite{turn0search5}. As shown in Figure~\ref{fig:bench-compare}, Keystone achieves near-native performance on CPU-bound workloads and maintains a balanced profile across memory and I/O operations when compared to SGX and TrustZone.
 
 The evolution of these TEEs over time is visualized in Figure~\ref{fig:tee-timeline}, placing Keystone's introduction in the broader historical context of trusted computing innovation.
 
@@ -560,9 +574,9 @@ However, memory-bound applications face a very different scenario. Memory isolat
 \end{figure}
 
 
-To address these performance issues, researchers have proposed alternative memory models that relax or restructure the traditional enclave-host memory boundaries. One such innovation is Elasticlave, a shared-memory model designed for enclaves that reduces isolation costs while preserving strong security properties. Elasticlave achieves an order of magnitude better performance compared to traditional spatial isolation models, with overheads as low as 10\% versus 100× to 1000× for spatially isolated configurations \cite{yu2022elasticlave}. Similarly, Eleos introduces self-paging within enclaves, allowing the enclave itself to manage virtual memory. This eliminates host OS involvement in page fault handling and mitigates context-switching and cache pollution overheads, resulting in significantly improved runtime efficiency \cite{orenbach2023eleos}. A related approach, Cerberus, applies formal methods to build a provably secure enclave memory-sharing model on Keystone. It enables safe data sharing with external components without compromising security, all while reducing redundancy and memory copying overheads \cite{lee2022cerberus}.
+To address these performance issues, researchers have proposed alternative memory models that relax or restructure the traditional enclave-host memory boundaries. One such innovation is Elasticlave \cite{yu2022elasticlave}, a shared-memory model designed for enclaves that reduces isolation costs while preserving strong security properties. Elasticlave achieves an order of magnitude better performance compared to traditional spatial isolation models, with overheads as low as 10\% versus 100× to 1000× for spatially isolated configurations. Similarly, Eleos \cite{orenbach2023eleos} introduces self-paging within enclaves, allowing the enclave itself to manage virtual memory. This eliminates host OS involvement in page fault handling and mitigates context-switching and cache pollution overheads, resulting in significantly improved runtime efficiency. A related approach, Cerberus \cite{lee2022cerberus}, applies formal methods to build a provably secure enclave memory-sharing model on Keystone. It enables safe data sharing with external components without compromising security, all while reducing redundancy and memory copying overheads.
 
-Input/output (I/O) operations also suffer substantial performance penalties in TEE contexts due to the need for secure copying and context switching. In Keystone, file I/O performance as measured using IOZone demonstrates a 36.2\% decrease in write throughput and a 40.9\% reduction in read throughput compared to execution in the Rich Execution Environment (REE). Repetitive operations, such as record rewriting, exhibit even greater overhead—up to 55.1\% \cite{Lee2019}. These results are visualized in Figure~\ref{fig:io-throughput}, which compares enclave and REE performance across several I/O workloads. Similar trends have been reported for other platforms; TS-perf reveals that both OP-TEE and SGX-based file operations incur high latency due to reliance on ECALLs and limited in-enclave storage APIs \cite{suzaki2021tsperf}.
+Input/output (I/O) operations also suffer substantial performance penalties in TEE contexts due to the need for secure copying and context switching. In Keystone, file I/O performance as measured using IOZone \cite{Lee2019} demonstrates a 36.2\% decrease in write throughput and a 40.9\% reduction in read throughput compared to execution in the Rich Execution Environment (REE). Repetitive operations, such as record rewriting, exhibit even greater overhead—up to 55.1\%. These results are visualized in Figure~\ref{fig:io-throughput}, which compares enclave and REE performance across several I/O workloads. Similar trends have been reported for other platforms; TS-perf reveals that both Open Portable Trusted Execution Environment (OP-TEE) and SGX-based file operations incur high latency due to reliance on ECALLs and limited in-enclave storage APIs \cite{suzaki2021tsperf}.
 
 \begin{figure}[htbp]
 \centering
@@ -594,9 +608,9 @@ Input/output (I/O) operations also suffer substantial performance penalties in T
 
 Even basic services such as time measurement exhibit significant variability depending on how they are implemented. For example, \texttt{TEE\_GetREETime()}—which retrieves the time from the REE—requires a context switch and is consequently far slower than \texttt{TEE\_GetSystemTime()}, which accesses an enclave-resident hardware timer. The performance difference between these two methods can be as high as 30×, illustrating how even seemingly simple operations may be subject to substantial overhead within a TEE \cite{suzaki2021tsperf}.
 
-An additional source of performance variability lies in runtime behavior and process scheduling. Observations from TS-perf experiments showed unexpected enclave behavior such as thread migration between CPU cores and incorrect CPU utilization reporting, particularly in OP-TEE and Keystone environments. These anomalies were traced to a lack of TEE-awareness in OS-level schedulers and, in Keystone's case, bugs in the Eyrie runtime's interrupt handling mechanism \cite{suzaki2021tsperf}.
+An additional source of performance variability lies in runtime behavior and process scheduling. Observations from TS-perf experiments showed unexpected enclave behavior such as thread migration between CPU cores and incorrect CPU utilization reporting, particularly in Open Portable Trusted Execution Environment (OP-TEE) and Keystone environments. These anomalies were traced to a lack of TEE-awareness in OS-level schedulers and, in Keystone's case, bugs in the Eyrie runtime's interrupt handling mechanism \cite{suzaki2021tsperf}.
 
-Monitoring and profiling enclave performance in real-time remains a difficult task. TEEMon provides a lightweight performance monitoring framework designed specifically for TEE environments. Though it introduces between 5–17\% overhead, it enables continuous visibility into runtime behavior and facilitates the identification of performance bottlenecks that would otherwise be hidden \cite{krahn2020teemon}.
+Monitoring and profiling enclave performance in real-time remains a difficult task. TEEMon \cite{krahn2020teemon} provides a lightweight performance monitoring framework designed specifically for TEE environments. Though it introduces between 5–17\% overhead, it enables continuous visibility into runtime behavior and facilitates the identification of performance bottlenecks that would otherwise be hidden.
 
 Finally, the cost of lifecycle operations—such as enclave initialization and teardown—should not be underestimated. In Keystone, these operations involve verifying memory integrity through hashing (e.g., SHA-3) and setting up cryptographic metadata. These steps consume between 2M–7M cycles per page for validation, and an additional 20k–30k cycles for each lifecycle event. The use of software-based cryptographic primitives amplifies these costs, though hardware acceleration could substantially mitigate them in future implementations \cite{Lee2019}.
 

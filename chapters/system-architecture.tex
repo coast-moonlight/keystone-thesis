@@ -5,7 +5,7 @@ The primary objective of this thesis is to evaluate the performance impact of Ke
 
 All benchmarks were executed within an emulated environment configured for the RV64GC architecture, which corresponds to the 64-bit RISC-V ISA targeted by Keystone. The QEMU-based emulation provides fine-grained control over system parameters and ensures experimental repeatability by eliminating variability introduced by physical hardware—such as thermal throttling, cache behavior, or platform-specific optimizations. While virtualized, QEMU accurately models instruction execution, privilege-level transitions, memory access patterns, and I/O behavior, making it a viable platform for preliminary performance evaluations of trusted execution environments.
 
-To assess the performance implications of enclave-based isolation, each benchmark was implemented as a standalone enclave application (referred to as an \textit{eapp}), accompanied by a corresponding host application responsible for enclave lifecycle management. The host application, running in user space, handles enclave initialization, benchmark loading, invocation of enclave entry points, and inter-domain communication via edge calls. In contrast, the enclave application is fully isolated by the Keystone runtime and contains only the benchmark logic and associated data structures. This strict separation ensures that the same benchmark codebase can be executed both natively (without isolation) and securely (within an enclave), without requiring structural changes—thus enabling a fair and consistent comparative analysis.
+To assess the performance implications of enclave-based isolation, each benchmark was implemented as a standalone enclave application (referred to as an \textit{eapp}), accompanied by a corresponding host application responsible for enclave lifecycle management. The host application, running in user space, handles enclave initialization, benchmark loading, invocation of enclave entry points, and inter-domain communication via edge calls, while the enclave application \texttt{(eapp)} also runs in user mode. In contrast, the enclave application is fully isolated by the Keystone runtime and contains only the benchmark logic and associated data structures. This strict separation ensures that the same benchmark codebase can be executed both natively (without isolation) and securely (within an enclave), without requiring structural changes—thus enabling a fair and consistent comparative analysis.
 
 The experimental procedure followed a systematic pipeline, outlined in Figure~\ref{fig:benchmarking-swimlane}, beginning with benchmark selection and system configuration, followed by dual-mode execution (native and enclave), and concluding with metric collection and comparative analysis.
 
@@ -206,11 +206,7 @@ icachesize=8192,iassoc=4,iblksize=64,cores=2,evict=lru" run
 
 While the plugin logs comprehensive cache activity, it cannot isolate cache events exclusively caused by enclave operations. Therefore, cache data interpretation requires caution when attributing performance effects specifically to enclaves.
 
-For kernel-level enclave debugging, QEMU’s built-in GDB server can be activated via the \texttt{KEYSTONE\_DEBUG} flag. Once the system boots, the Keystone kernel driver is loaded manually using the command in Listing~\ref{lst:modprobe}.
-
-\begin{lstlisting}[language=bash, caption={Loading the Keystone kernel driver}, label={lst:modprobe}]
-modprobe keystone-driver
-\end{lstlisting}
+For kernel-level enclave debugging, QEMU’s built-in GDB server can be activated via the \texttt{KEYSTONE\_DEBUG} flag. Once the system boots, the Keystone kernel driver is loaded manually using the command: \texttt{modprobe keystone-driver}.
 
 This step initializes enclave functionality, allowing benchmark binaries to be securely loaded and executed within isolated memory regions managed by the Security Monitor.
 
@@ -235,7 +231,7 @@ The Kyber implementation employed in this work is derived from a lightweight, st
 Both the IND-CPA (indistinguishability under chosen-plaintext attack) and IND-CCA (indistinguishability under chosen-ciphertext attack) security models were considered. For performance profiling, the core cryptographic routines—key generation, encapsulation, and decapsulation—were individually invoked within the enclave. This allowed for fine-grained instrumentation and measurement of each function’s runtime behavior under enclave-induced constraints.
 
 The specific functions evaluated are shown in Listing~\ref{lst:kyber_api}, grouped by security level:
-
+\vspace{5em}
 \begin{lstlisting}[language=bash,caption={Kyber cryptographic API functions},label={lst:kyber_api}]
 indcpa_keypair   # Key pair generation for IND-CPA variant
 indcpa_enc       # Encryption (encapsulation) under IND-CPA assumptions
@@ -245,7 +241,7 @@ kyber_keypair    # Enhanced key pair generation supporting IND-CCA
 kyber_encaps     # IND-CCA-compliant encapsulation
 kyber_decaps     # IND-CCA-compliant decapsulation
 \end{lstlisting}
-Each of these operations was executed across the five representative system configurations defined in Section~\ref{sec:param-variation}, which span a broad range of memory capacities, core counts, and execution modes. To ensure measurement accuracy and reduce variability from transient system states, ten iterations were run per configuration with the first iteration discarded as a warm-up phase. Execution timing was obtained using the enclave’s internal high-resolution timer API, capturing secure-world runtime exclusively. In parallel, external system-level metrics — such as CPU usage, memory footprint, and context switching counts — were gathered from the host environment to provide contextual insights into system overhead and resource utilization.
+Each of these operations was executed across the five representative system configurations defined in Section~\ref{sec:param-variation}, which span a broad range of memory capacities, core counts, and execution modes. To ensure measurement accuracy and reduce variability from transient system states, ten iterations were run per configuration with the first iteration discarded as a warm-up phase. Execution timing was obtained using the enclave’s internal high-resolution timer API, capturing only secure-world runtime and thus remaining isolated from background activity in the Linux kernel. In parallel, external system-level metrics — including CPU usage, memory footprint, and context switching counts — were gathered from the host environment, reflecting overall system overhead and resource utilization influenced by the kernel and other processes.
 
 Unlike the synthetic benchmarks Dhrystone and CoreMark, Kyber’s workload is characterized by its intensive use of polynomial arithmetic, noise sampling, and number-theoretic transform (NTT) operations, all of which impose a distinct computational profile. Notably, Kyber exhibits a predominantly CPU-bound execution pattern, with relatively limited memory demands. This profile contrasts with cache- and memory-intensive workloads, which often demonstrate sensitivity to cache size, associativity, and eviction policies. Additionally, Kyber’s current implementation executes sequentially without exploiting parallelism or multithreading, making it well-suited for analysis within single-threaded enclave contexts.
 
@@ -416,4 +412,4 @@ To compute the enclave-specific performance overhead, we employed a normalized o
 
 This percentage-based formulation allows for direct cross-comparison of overheads across workloads with differing baseline durations. It also facilitates trend identification across system configurations, particularly when assessing scaling behaviors.
 
-For reproducibility, all benchmarking scripts, system configurations, QEMU command-line options, Keystone runtime parameters, and cache plugin settings were version-controlled using Git. Raw benchmark outputs, kernel logs, and cache plugin trace files were archived and documented. A complete snapshot of the experimental infrastructure, along with scripts to regenerate results, is provided in Appendix~\ref{appendix:cache-plugin}. This archival effort ensures that all reported results can be independently verified and reproduced by future researchers or evaluators.
+For reproducibility, all benchmarking scripts, system configurations, QEMU command-line options, Keystone runtime parameters, and cache plugin settings were version-controlled using Git. Raw benchmark outputs, kernel logs, and cache plugin trace files were archived and documented. Complete snapshots of the experimental infrastructure, along with scripts to regenerate results, are publicly available\footnote{\url{https://github.com/coast-moonlight/keystone.git}}. This archival effort ensures that all reported results can be independently verified and reproduced by future researchers or evaluators.

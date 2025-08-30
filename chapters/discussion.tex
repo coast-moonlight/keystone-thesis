@@ -9,7 +9,7 @@ In addition to synthesizing the key performance trends, this chapter explores th
 
 Finally, the chapter concludes by formulating design recommendations and identifying future directions for research and development. These include enhancements to hardware features such as PMP flexibility, improved enclave management strategies at the software layer, and potential extensions to the Keystone framework to support more scalable and efficient trusted execution environments.
 
-This chapter transitions from measurement to meaning: it connects the observed data to the architectural principles underpinning enclave execution, therebyinforming both future research and practical deployment of secure computing systems based on open RISC-V architectures.
+This chapter transitions from measurement to meaning: it connects the observed data to the architectural principles underpinning enclave execution, thereby informing both future research and practical deployment of secure computing systems based on open RISC-V architectures.
 
 \section{Synthesis of Key Performance Trends and Hardware Bottlenecks}
 \label{sec:synthesis}
@@ -45,7 +45,9 @@ A key observation from our experiments is the consistent but moderate performanc
 
 For compute-bound tasks, such as those evaluated using CoreMark and Dhrystone, the overhead remains relatively modest. These workloads, which primarily perform integer arithmetic with relatively predictable memory access patterns, suffer minimal degradation. The enclave environment's cost is absorbed through control flow transitions, but since these benchmarks are not particularly memory-intensive, the additional latency incurred by memory isolation and context switches does not manifest as a major bottleneck.
 
-However, workloads with more intensive memory access or intricate memory patterns, such as Kyber (a post-quantum cryptographic algorithm), experience much higher overhead. The Kyber algorithm, which involves significant pointer dereferencing and array indexing, incurs a significant penalty as every memory access is subject to additional security checks and encryption layers. This is compounded by the latency-sensitive nature of cryptographic workloads, where even small delays can result in significant performance degradation. The nearly threefold slowdown in enclave execution compared to native execution is primarily due to the added latency from memory encryption and integrity checks, which are inherently more expensive for memory-intensive algorithms.
+However, workloads with more intensive memory access or intricate memory patterns, such as Kyber (a post-quantum cryptographic algorithm), experience much higher overhead. Kyber involves frequent pointer dereferencing and array indexing, where each operation depends on the completion of the previous memory access. Within an enclave, every memory access triggers additional security checks, including encryption, integrity verification, and, in some cases, TLB flushes on context switches, adding fixed latency per operation. 
+
+Cryptographic workloads are particularly sensitive to such latency because the sequential, dependent nature of their computations prevents effective hiding of memory delays. Even small delays accumulate across thousands of operations, resulting in a substantial slowdown. Consequently, the nearly threefold slowdown observed for Kyber in enclave execution compared to native execution is primarily due to the added latency from memory encryption, integrity checks, and occasional TLB flushes, which disproportionately impact memory-intensive, latency-bound workloads.
 
 This analysis underscores that enclave performance is not solely dependent on raw processing power but is intricately linked to the memory behavior of workloads. Sequential, compute-bound tasks like Dhrystone and CoreMark can endure the overhead of enclave execution without significant slowdowns, whereas memory-bound workloads such as Kyber suffer disproportionately due to frequent memory accesses that require validation, encryption, and integrity checks.
 
@@ -249,6 +251,8 @@ This issue becomes even more pronounced in multi-tenant environments where multi
 
 \begin{figure}[htbp]
 \centering
+
+% --- PMP entry usage chart ---
 \begin{tikzpicture}[scale=1, transform shape]
 \begin{axis}[
     ybar,
@@ -260,7 +264,7 @@ This issue becomes even more pronounced in multi-tenant environments where multi
     x tick label style={rotate=20, anchor=east},
     ymajorgrids, grid style=dashed,
     enlarge x limits=0.15,
-    legend style={at={(0.5,-0.3)},anchor=north,legend columns=2},
+    legend style={at={(0.5,-0.4)},anchor=north,legend columns=2},
     pattern color=black,
     nodes near coords, every node near coord/.append style={font=\scriptsize, rotate=90, anchor=west}
 ]
@@ -279,28 +283,10 @@ This issue becomes even more pronounced in multi-tenant environments where multi
 \legend{Contiguous mapping,Fragmented mapping}
 \end{axis}
 \end{tikzpicture}
-\caption{Fragmentation and misalignment increase PMP entry usage, showing how non-ideal alignment leads to more PMP entries per enclave.}
-\label{fig:pmp-fragmentation-entries}
-\end{figure}
 
-To address overhead and scalability challenges, \emph{enclave multiplexing} offers a promising software-level strategy by consolidating multiple lightweight workloads into a single enclave. This reduces the number of PMP entries required by reusing them across tasks, optimizing resource usage and improving scalability. An example of a multiplexed enclave task dispatcher is shown in Listing~\ref{lst:enclave-mux}.
+\vspace{1em}
 
-\begin{lstlisting}[language=Python, caption={Multiplexed enclave task dispatcher.}, label={lst:enclave-mux}]
-def enclave_dispatcher(task_id, input_data):
-    if task_id == 1:
-        return process_crypto(input_data)
-    elif task_id == 2:
-        return handle_key_store(input_data)
-    elif task_id == 3:
-        return run_diagnostics(input_data)
-    else:
-        raise ValueError("Unknown task")
-\end{lstlisting}
-
-Furthermore, the trade-off between memory usage and security introduces additional complexity in system design. Enclaves need to be carefully sized and aligned to fit within the constraints of PMP's encoding scheme, particularly the NAPOT (Naturally Aligned Power-Of-Two) encoding used to specify memory regions. For cryptographic workloads that often require non-contiguous memory layouts, inefficient PMP entry management leads to fragmentation and resource wastage, increasing overhead and limiting concurrent enclaves.
-
-\begin{figure}[htbp]
-\centering
+% --- NAPOT fragmentation diagram ---
 \begin{tikzpicture}[scale=1, transform shape,font=\small]
 % Memory bar
 \draw[thick] (0,0) rectangle (12,1);
@@ -327,9 +313,60 @@ Furthermore, the trade-off between memory usage and security introduces addition
 
 \node[anchor=west] at (0,-1.5) {\footnotesize Hatched = padding/waste due to power-of-two alignment};
 \end{tikzpicture}
-\caption{Fragmentation overhead caused by mapping non-contiguous memory regions to NAPOT-aligned blocks. The hatched areas represent wasted padding required for alignment.}
-\label{fig:napot-fragmentation}
+
+\caption{Top: PMP entry usage increases with fragmentation and misalignment. Bottom: Fragmentation overhead caused by mapping non-contiguous memory regions to NAPOT-aligned blocks, with hatched areas representing wasted padding.}
+\label{fig:pmp-and-napot-fragmentation}
 \end{figure}
+
+To address overhead and scalability challenges, \emph{enclave multiplexing} offers a promising software-level strategy by consolidating multiple lightweight workloads into a single enclave. This reduces the number of PMP entries required by reusing them across tasks, optimizing resource usage and improving scalability. An example of a multiplexed enclave task dispatcher is shown in Listing~\ref{lst:enclave-mux}.
+\vspace{8em}
+\begin{lstlisting}[language=Python, caption={Multiplexed enclave task dispatcher.}, label={lst:enclave-mux}]
+def enclave_dispatcher(task_id, input_data):
+    if task_id == 1:
+        return process_crypto(input_data)
+    elif task_id == 2:
+        return handle_key_store(input_data)
+    elif task_id == 3:
+        return run_diagnostics(input_data)
+    else:
+        raise ValueError("Unknown task")
+\end{lstlisting}
+
+To address overhead and scalability challenges, \emph{enclave multiplexing} offers a promising software-level strategy by consolidating multiple lightweight workloads into a single enclave. This reduces the number of PMP entries required by reusing them across tasks, optimizing resource usage and improving scalability. An example of a multiplexed enclave task dispatcher is shown in Listing~\ref{lst:enclave-mux}.
+
+Furthermore, the trade-off between memory usage and security introduces additional complexity in system design. Enclaves need to be carefully sized and aligned to fit within the constraints of PMP's encoding scheme, particularly the NAPOT (Naturally Aligned Power-Of-Two) encoding used to specify memory regions. For cryptographic workloads that often require non-contiguous memory layouts, inefficient PMP entry management leads to fragmentation and resource wastage, increasing overhead and limiting concurrent enclaves.
+
+% \begin{figure}[htbp]
+% \centering
+% \begin{tikzpicture}[scale=1, transform shape,font=\small]
+% % Memory bar
+% \draw[thick] (0,0) rectangle (12,1);
+% \node[anchor=south] at (0,1.1) {Base};
+% \node[anchor=south] at (12,1.1) {Top};
+
+% % Needed regions (non-contiguous)
+% \draw[fill=gray!30] (0.5,0.1) rectangle (2.2,0.9) node[pos=.5] {\footnotesize R1};
+% \draw[fill=gray!30] (3.8,0.1) rectangle (4.6,0.9) node[pos=.5] {\footnotesize R2};
+% \draw[fill=gray!30] (7.0,0.1) rectangle (9.1,0.9) node[pos=.5] {\footnotesize R3};
+
+% % NAPOT allocations (outer boxes) and padding (hatched)
+% \draw[thick] (0.25,-0.3) rectangle (2.5,-1.1) node[pos=.5] {\footnotesize NAPOT fit R1};
+% \draw[pattern=north east lines,pattern color=black] (0.25,-0.3) rectangle (0.5,-1.1);
+% \draw[pattern=north east lines,pattern color=black] (2.2,-0.3) rectangle (2.5,-1.1);
+
+% \draw[thick] (3.5,-0.3) rectangle (5.1,-1.1) node[pos=.5] {\footnotesize NAPOT fit R2};
+% \draw[pattern=north east lines,pattern color=black] (3.5,-0.3) rectangle (3.8,-1.1);
+% \draw[pattern=north east lines,pattern color=black] (4.6,-0.3) rectangle (5.1,-1.1);
+
+% \draw[thick] (6.7,-0.3) rectangle (9.3,-1.1) node[pos=.5] {\footnotesize NAPOT fit R3};
+% \draw[pattern=north east lines,pattern color=black] (6.7,-0.3) rectangle (7.0,-1.1);
+% \draw[pattern=north east lines,pattern color=black] (9.1,-0.3) rectangle (9.3,-1.1);
+
+% \node[anchor=west] at (0,-1.5) {\footnotesize Hatched = padding/waste due to power-of-two alignment};
+% \end{tikzpicture}
+% \caption{Fragmentation overhead caused by mapping non-contiguous memory regions to NAPOT-aligned blocks. The hatched areas represent wasted padding required for alignment.}
+% \label{fig:napot-fragmentation}
+% \end{figure}
 
 The memory layout complexity is also reflected in code structures like the custom memory layout shown in Listing~\ref{lst:memory-layout}, which attempts to align heap, stack, and code regions to NAPOT boundaries.
 
@@ -366,7 +403,7 @@ Moreover, cryptographic workloads, particularly those used in emerging fields li
 \label{sec:best-practices}
 Deploying Trusted Execution Environments (TEEs) on RISC-V platforms using the Keystone framework presents a unique set of challenges and opportunities that must be carefully navigated to achieve optimal security and performance. Based on the extensive performance benchmarking and system analysis conducted in Chapters~\ref{chap:benchmarking} and \ref{chap:discussion}, several configuration best practices emerge, offering practical guidance for system architects, developers, and security engineers seeking to deploy enclaves across a variety of workload types and operational contexts.
 
-A fundamental consideration when configuring RISC-V enclaves involves a holistic understanding of the interplay between hardware resources, isolation mechanisms, and workload characteristics. As discussed in Section~\ref{sec:synthesis} of Chapter~\ref{chap:discussion}, the Physical Memory Protection (PMP) mechanism stands at the heart of this relationship, providing the essential hardware-enforced boundary that isolates enclave memory from the untrusted environment. However, PMP’s inherent design—specifically the limited number of entries available and the strict Naturally Aligned Power-of-Two (NAPOT) encoding format for memory regions—imposes a critical scalability constraint that directly influences enclave instantiation and concurrency. Consequently, configuring enclave memory regions to maximize contiguity and alignment is paramount; doing so minimizes PMP entry consumption, reduces fragmentation, and alleviates potential bottlenecks in enclave creation and management. Developers are advised to meticulously design memory layouts that conform to PMP’s alignment constraints, thereby ensuring that enclave memory mappings are as compact and contiguous as possible (see Figure~\ref{fig:pmp-fragmentation-group}).
+A fundamental consideration when configuring RISC-V enclaves involves a holistic understanding of the interplay between hardware resources, isolation mechanisms, and workload characteristics. As discussed in Section~\ref{sec:synthesis} of Chapter~\ref{chap:discussion}, the Physical Memory Protection (PMP) mechanism stands at the heart of this relationship, providing the essential hardware-enforced boundary that isolates enclave memory from the untrusted environment. However, PMP’s inherent design—specifically the limited number of entries available and the strict Naturally Aligned Power-of-Two (NAPOT) encoding format for memory regions—imposes a critical scalability constraint that directly influences enclave instantiation and concurrency. Consequently, configuring enclave memory regions to maximize contiguity and alignment is paramount; doing so minimizes PMP entry consumption, reduces fragmentation, and alleviates potential bottlenecks in enclave creation and management. Developers are advised to meticulously design memory layouts that conform to PMP’s alignment constraints, thereby ensuring that enclave memory mappings are as compact and contiguous as possible (see Figure~\ref{fig:pmp-and-napot-fragmentation}).
 
 Memory capacity itself is another crucial parameter influencing enclave performance, as shown in the benchmarking results summarized in Section~\ref{sec:workload-sensitivity} (Chapter~\ref{chap:benchmarking}). Increasing the amount of memory allocated to enclaves generally results in improved throughput by reducing page faults and enhancing cache locality, which collectively diminishes the latency penalties introduced by enclave isolation. However, the law of diminishing returns applies here: beyond a certain threshold, particularly when memory regions become fragmented or non-contiguous, the incremental performance gains taper off, and the increased PMP entry overhead begins to outweigh benefits. Thus, system designers should balance memory allocation with PMP resource consumption carefully, favoring contiguous memory blocks that fit neatly within available PMP registers.
 
@@ -392,7 +429,7 @@ First and foremost, it is essential to adopt a workload-aware approach to enclav
 
 The performance challenges associated with memory-bound workloads, as highlighted by the benchmarking of Kyber and discussed in Chapter~\ref{chap:discussion}, suggest that hardware accelerators could play a pivotal role in improving enclave efficiency. Hardware-based acceleration for cryptographic algorithms—such as post-quantum schemes—could alleviate the overhead incurred by the enclave’s security enforcement. Incorporating specialized cryptographic co-processors within the TEE architecture would allow the bulk of cryptographic computations to be offloaded, reducing the load on the CPU and minimizing the need for frequent transitions between enclave and host contexts. This could significantly reduce the latency and overhead associated with cryptographic operations in secure environments.
 
-Given the PMP entry limitations and the observed overheads of enclave context switches, a key deployment recommendation is to limit the number of simultaneously active enclaves to avoid PMP exhaustion, which can lead to explicit enclave creation failures (see Section~\ref{sec:workload-sensitivity}, Chapter~\ref{chap:benchmarking}). Practical configurations should, therefore, consolidate workloads into fewer, more capable enclaves when possible—a strategy known as enclave multiplexing. This approach not only conserves precious PMP entries but also reduces synchronization overhead and inter-enclave communication latency. Software-level techniques, including dynamic PMP entry management and runtime reconfiguration, can further optimize resource utilization by adapting PMP assignments based on workload activity and priority, though these require sophisticated coordination to maintain security invariants.
+Given the PMP entry limitations and the observed overheads of enclave context switches, a key deployment recommendation is to limit the number of simultaneously active enclaves to avoid PMP exhaustion, which can lead to explicit enclave creation failures (see Section~\ref{sec:workload-sensitivity}, Chapter~\ref{chap:benchmarking}). Practical configurations should, therefore, consolidate workloads into fewer, more capable enclaves when possible—a strategy known as enclave multiplexing \cite{Occlum2020}. This approach not only conserves precious PMP entries but also reduces synchronization overhead and inter-enclave communication latency. Software-level techniques, including dynamic PMP entry management and runtime reconfiguration, can further optimize resource utilization by adapting PMP assignments based on workload activity and priority, though these require sophisticated coordination to maintain security invariants.
 
 From a systems engineering perspective, the limitations of the PMP mechanism in its current form also warrant attention, as emphasized in Chapter~\ref{chap:discussion}. Expanding the number of available PMP entries or introducing more flexible memory region encoding schemes—such as support for larger or more fragmented memory regions—could alleviate some of the bottlenecks currently faced by multi-enclave deployments. These hardware modifications, however, would require changes to the underlying processor architecture and may not be feasible for immediate implementation. In the meantime, optimizing the use of existing PMP entries through dynamic allocation, memory layout optimization, and enclave multiplexing strategies offers a more immediate solution to the scalability challenges.
 
