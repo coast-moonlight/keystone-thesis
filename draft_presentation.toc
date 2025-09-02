@@ -1,1 +1,1 @@
-\beamer@sectionintoc {1}{Synthesis of Key Performance Trends and Hardware Bottlenecks}{29}{0}{1}
+\beamer@sectionintoc {1}{Synthesis of Key Performance Trends and Hardware Bottlenecks}{25}{0}{1}

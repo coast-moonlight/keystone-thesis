@@ -11,7 +11,8 @@
 \usepackage{colortbl}     % for \rowcolor, \rowcolors, \cellcolor in tables
 \usepackage{tikz}         % for drawing graphics
 \usetikzlibrary{patterns,positioning} % enable patterns and positioning for tikz
-\usepackage{pgfplots} 
+\usepackage{pgfplots}
+\usepackage[transitions={dissolve}]{pdfpc}
 %\pgfplotsset{compat=1.17} % set PGFPlots compatibility
 
 % Colours
@@ -28,6 +29,7 @@
 
 % Title and Author
 \title[Evaluating RISC-V Enclaves]{\textbf{Evaluating RISC-V Enclaves:}\\ Security Without the Slowdown?}
+\subtitle{Performance Evaluation and Optimization of Keystone Enclaves on RISC-V}
 \author{\textbf{Basil Ugbomoiko}}
 \institute[UzL]{Universität zu Lübeck \\ Institut für Technische Informatik}
 \date{Master’s Thesis Defense — \today}
@@ -64,6 +66,19 @@ Can we \textcolor{keystoneblue}{trust} computation on machines we \textcolor{war
 \end{itemize}
 \vfill
 %\scriptsize\textit{This sets the stage for Trusted Execution Environments (TEEs).}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=1.2cm and 1cm, every node/.style={font=\small}]
+    \node[draw, fill=orange!30, minimum width=2.5cm, minimum height=1cm, rounded corners] (app) {\textbf{App}};
+    \node[draw, fill=gray!20, below=of app, minimum width=3cm, minimum height=1cm, rounded corners] (os) {\textbf{Untrusted OS}};
+    \node[draw, fill=blue!15, right=3cm of app, minimum width=2.5cm, minimum height=1cm, rounded corners] (enclave) {\faLock\ \textbf{Enclave}};
+    
+    \draw[->, thick, red] (os) -- (app) node[midway, left, align=left, font=\footnotesize] {Possible interference\\ or data snooping};
+    \draw[->, thick, keystoneblue] (app) -- (enclave) node[midway, above, font=\footnotesize] {Trusted Execution};
+    \draw[->, thick, dashed, red] (os) -- (enclave) node[midway, below, font=\footnotesize] {Attempted attack blocked};
+\end{tikzpicture}
+\caption{Enclaves isolate computation from a compromised OS}
+\end{figure}
 \end{frame}
 
 % Background on TEEs (Added icons for clarity)
@@ -110,7 +125,6 @@ No comprehensive, benchmarked assessment of \\
 \textit{RISC-V’s open-source nature enables flexible, secure processor designs for enclave-based systems.}
 \end{block}
 \end{frame}
-
 
 % Keystone 
 \begin{frame}{Why Keystone?}
@@ -272,16 +286,17 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \begin{frame}{Benchmarking Tools}
     \small
     \begin{itemize}
-        \item \textbf{Dhrystone:} Measures CPU performance (DMIPS). \pause
-        \item \textbf{CoreMark:} Focuses on integer performance, used in embedded systems benchmarking. \pause
-        \item \textbf{Two configurations:}
+        \item \textbf{Dhrystone:} Measures CPU performance (DMIPS).
+        \item \textbf{CoreMark:} Focuses on integer performance, used in embedded systems benchmarking.
+        \begin{block}{Execution Modes}
         \begin{itemize}
-            \item \textbf{Native Execution:} Benchmark runs as a normal process. \pause
-            \item \textbf{Enclave Execution:} Benchmark runs within a Keystone enclave with memory isolation. \pause
+            \item \textbf{Native Execution:} Benchmark runs as a normal process.
+            \item \textbf{Enclave Execution:} Benchmark runs within a Keystone enclave.
         \end{itemize}
+        \end{block}
     \end{itemize}
-    \vspace{0.5em}
-    \uncover<5->{\textbf{Key Focus:} These tools provide insights into both CPU-bound and system-level performance.}
+    %\vspace{0.5em}
+    %\uncover<1->{\textbf{Key Focus:} These tools provide insights into both CPU-bound and system-level performance.}
 \end{frame}
 
 %Results
@@ -512,8 +527,8 @@ When a memory region is \textbf{misaligned}:
 
 % Legend
 \begin{scope}[xshift=0cm,yshift=-1.5cm]
-\draw[fill=keystoneblue!60] (0,0) rectangle (0.4,0.4) node[right=0.5cm] {Actual region (contiguous)};
-\draw[fill=warmaccent!60] (5,0) rectangle (5.4,0.4) node[right=0.5cm] {Actual region (fragmented)};
+\draw[fill=keystoneblue!60] (0,0) rectangle (0.4,0.4) node[right=0.5cm] {Contiguous region};
+\draw[fill=warmaccent!60] (5,0) rectangle (5.4,0.4) node[right=0.5cm] {Fragmented region};
 \draw[pattern=north east lines,pattern color=black] (0,-0.6) rectangle (0.4,-0.2) node[right=0.5cm] {Wasted padding};
 \draw[fill=gray!50,opacity=0.4] (5,-0.6) rectangle (5.4,-0.2) node[right=0.5cm] {PMP entry count bar};
 \end{scope}
@@ -608,6 +623,7 @@ When a memory region is \textbf{misaligned}:
 \Huge\textbf{Thank You}\\
 \large Questions? \faQuestionCircle
 \vfill
-\small Universität zu Lübeck — Master’s Thesis Defense
+%\small Universität zu Lübeck — Master’s Thesis Defense
+\includegraphics[height=1cm]{uzl-logo.pdf}
 \end{frame}
 \end{document}
