@@ -81,6 +81,24 @@ Can we \textcolor{keystoneblue}{trust} computation on machines we \textcolor{war
 \end{figure}
 \end{frame}
 
+% Research Gap (Emphasized visual structure)
+\begin{frame}{Research Gap}
+\centering
+\Large\bfseries
+No comprehensive, benchmarked assessment of \\
+\textbf{Keystone} performance overhead with \\
+\textit{actionable tuning guidance.}
+\end{frame}
+
+\begin{frame}{Contributions}
+\begin{itemize}
+    \item \textbf{Systematic performance evaluation} of Keystone across varied workloads.
+    \item \textbf{Identification of hardware bottlenecks} like PMP entry exhaustion and misaligned memory.
+    \item \textbf{Actionable optimization guidelines} for developers using Keystone TEEs.
+    %\item \textbf{Visual benchmarking workflow} and comparison to alternative TEEs.
+\end{itemize}
+\end{frame}
+
 % Background on TEEs (Added icons for clarity)
 \begin{frame}{Background: TEEs in a Nutshell}
 \begin{block}{Definition}
@@ -93,15 +111,6 @@ Examples include:
     \item AMD SEV \faServer\ \textit{(Virtual machine encryption for server environments)}
     \item Keystone \faKey\ \textit{(Modular, open-source for RISC-V)}
 \end{itemize}
-\end{frame}
-
-% Research Gap (Emphasized visual structure)
-\begin{frame}{Research Gap}
-\centering
-\Large\bfseries
-No comprehensive, benchmarked assessment of \\
-\textbf{Keystone} performance overhead with \\
-\textit{actionable tuning guidance.}
 \end{frame}
 
 % % Research Objectives (Visual appeal with bullet style)
@@ -127,7 +136,7 @@ No comprehensive, benchmarked assessment of \\
 \end{frame}
 
 % Keystone 
-\begin{frame}{Why Keystone?}
+\begin{frame}{From Problem to Solution: Enter Keystone}
 \begin{itemize}
     \item Modular, open-source TEE for RISC-V.
     \item Uses Physical Memory Protection (PMP) and minimal Security Monitor for isolation.
@@ -158,8 +167,6 @@ No comprehensive, benchmarked assessment of \\
 \begin{frame}{Keystone vs. Other TEEs}
 \begin{figure}[htbp]
 \centering
-\caption{Feature comparison of major TEEs.}
-\label{fig:tee-features}
 \renewcommand{\arraystretch}{1.3} % more row height
 \setlength{\tabcolsep}{5pt}       % more column padding
 \rowcolors{2}{gray!5}{white}      % alternating row colors
@@ -176,6 +183,8 @@ TCB Size               & \cellcolor{green!15}Low & \cellcolor{yellow!15}Medium &
 Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cellcolor{red!15}Low & \cellcolor{yellow!15}Medium \\
 \bottomrule
 \end{tabular}
+\caption{Feature comparison of major TEEs.}
+\label{fig:tee-features}
 \end{figure}
 
 \end{frame}
@@ -283,24 +292,24 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     \end{figure}
 \end{frame}
 
-\begin{frame}{Benchmarking Tools}
-    \small
-    \begin{itemize}
-        \item \textbf{Dhrystone:} Measures CPU performance (DMIPS).
-        \item \textbf{CoreMark:} Focuses on integer performance, used in embedded systems benchmarking.
-        \begin{block}{Execution Modes}
-        \begin{itemize}
-            \item \textbf{Native Execution:} Benchmark runs as a normal process.
-            \item \textbf{Enclave Execution:} Benchmark runs within a Keystone enclave.
-        \end{itemize}
-        \end{block}
-    \end{itemize}
-    %\vspace{0.5em}
-    %\uncover<1->{\textbf{Key Focus:} These tools provide insights into both CPU-bound and system-level performance.}
-\end{frame}
+% \begin{frame}{Benchmarking Tools}
+%     \small
+%     \begin{itemize}
+%         \item \textbf{Dhrystone:} Measures CPU performance (DMIPS).
+%         \item \textbf{CoreMark:} Focuses on integer performance, used in embedded systems benchmarking.
+%         \begin{block}{Execution Modes}
+%         \begin{itemize}
+%             \item \textbf{Native Execution:} Benchmark runs as a normal process.
+%             \item \textbf{Enclave Execution:} Benchmark runs within a Keystone enclave.
+%         \end{itemize}
+%         \end{block}
+%     \end{itemize}
+%     %\vspace{0.5em}
+%     %\uncover<1->{\textbf{Key Focus:} These tools provide insights into both CPU-bound and system-level performance.}
+% \end{frame}
 
 %Results
-\section{Synthesis of Key Performance Trends and Hardware Bottlenecks}
+\section{Key Performance Trends and Hardware Bottlenecks}
 \label{sec:synthesis}
 
 \begin{frame}{Enclave Overhead and System Behavior}
@@ -322,47 +331,6 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 
 \centering
 \textbf{Key Insight:} Overhead varies based on workload characteristics and memory behavior.
-\end{frame}
-
-\begin{frame}{Impact of Scalability Limitations}
-\small
-\begin{block}{CPU Scaling Limits}
-\begin{itemize}
-    \item Increasing CPU cores \textbf{benefits multi-threaded tasks}, but gains plateau due to context-switch overhead and enclave thread management.
-    \item For example, \texttt{CoreMark} shows marginal improvements beyond 4 cores.
-\end{itemize}
-\end{block}
-
-\begin{block}{Memory Scaling Constraints}
-\begin{itemize}
-    \item Increased memory capacity \textbf{improves performance} by reducing page faults.
-    \item \textbf{Fragmentation} and \textbf{PMP entry limits} cap the performance improvement.
-\end{itemize}
-\end{block}
-
-\centering
-\textbf{Key Insight:} Hardware resources alone cannot fully predict enclave performance due to system resource allocation limits.
-\end{frame}
-
-\begin{frame}{PMP Entry Exhaustion and Multi-Enclave Scalability}
-\small
-\begin{block}{PMP Resource Limitations}
-\begin{itemize}
-    \item \textbf{Maximum PMP entries}: 16.
-    \item Exhausted PMP entries \textbf{prevent new enclave creation}, causing errors even with abundant system resources.
-    \item Failure due to PMP exhaustion: \texttt{SBI error codes}.
-\end{itemize}
-\end{block}
-
-\begin{block}{Scalability Bottleneck}
-\begin{itemize}
-    \item In \textbf{multi-tenant environments}, PMP exhaustion limits the number of concurrent enclaves.
-    \item This creates scalability issues, especially for high-concurrency workloads.
-\end{itemize}
-\end{block}
-
-\centering
-\textbf{Key Insight:} PMP limitations represent a significant scalability bottleneck for RISC-V enclave-based systems.
 \end{frame}
 
 \begin{frame}{Performance Trends and Hardware Bottlenecks}
@@ -409,87 +377,250 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \end{figure}
 \end{frame}
 
-\begin{frame}{Key Takeaways from Performance Trends}
+\begin{frame}{Impact of Scalability Limitations}
 \small
-\begin{block}{Main Findings}
+\begin{block}{CPU Scaling Limits}
 \begin{itemize}
-    \item Enclave performance suffers primarily in \textbf{memory-bound workloads} due to security checks and context switching.
-    \item \textbf{PMP entry limitations} restrict scalability in multi-enclave setups.
-    \item Increasing hardware resources does not linearly translate to performance gains due to system-level overheads.
+    \item Increasing CPU cores \textbf{benefits multi-threaded tasks}, but gains plateau due to context-switch overhead and enclave thread management.
+    \item For example, \texttt{CoreMark} shows marginal improvements beyond 4 cores.
+\end{itemize}
+\end{block}
+
+\begin{block}{Memory Scaling Constraints}
+\begin{itemize}
+    \item Increased memory capacity \textbf{improves performance} by reducing page faults.
+    \item \textbf{Fragmentation} and \textbf{PMP entry limits} cap the performance improvement.
 \end{itemize}
 \end{block}
 
 \centering
-\textbf{Key Insight:} Optimizing both hardware resources and system-level configurations is essential for scalable and efficient enclave execution.
+\textbf{Key Insight:} Hardware resources alone cannot fully predict enclave performance due to system resource allocation limits.
+\end{frame}
+
+\begin{frame}{PMP Entry Exhaustion and Multi-Enclave Scalability}
+\small
+\begin{block}{PMP Resource Limitations}
+\begin{itemize}
+    \item \textbf{Maximum PMP entries}: 16.
+    \item Exhausted PMP entries \textbf{prevent new enclave creation}, causing errors even with abundant system resources.
+    \item Failure due to PMP exhaustion: \texttt{SBI error codes}.
+\end{itemize}
+\end{block}
+
+\begin{block}{Scalability Bottleneck}
+\begin{itemize}
+    \item In \textbf{multi-tenant environments}, PMP exhaustion limits the number of concurrent enclaves.
+    \item This creates scalability issues, especially for high-concurrency workloads.
+\end{itemize}
+\end{block}
+
+\centering
+\textbf{Key Insight:} PMP limitations represent a significant scalability bottleneck for RISC-V enclave-based systems.
 \end{frame}
 
 
-\begin{frame}{Why Misalignment Bloats PMP Usage}
-\small
-\vfill
+% \begin{frame}{Key Takeaways from Performance Trends}
+% \small
+% \begin{block}{Main Findings}
+% \begin{itemize}
+%     \item Enclave performance suffers primarily in \textbf{memory-bound workloads} due to security checks and context switching.
+%     \item \textbf{PMP entry limitations} restrict scalability in multi-enclave setups.
+%     \item Increasing hardware resources does not linearly translate to performance gains due to system-level overheads.
+% \end{itemize}
+% \end{block}
 
-% Problem
-\only<1>{
-\begin{block}{Problem}
-Physical Memory Protection (PMP) entries must cover power‑of‑two sized, naturally aligned regions (NAPOT).
-\end{block}
-}
+% \centering
+% \textbf{Key Insight:} Optimizing both hardware resources and system-level configurations is essential for scalable and efficient enclave execution.
+% \end{frame}
 
-% Cause
-\only<2>{
-\begin{block}{Problem}
-Physical Memory Protection (PMP) entries must cover power‑of‑two sized, naturally aligned regions (NAPOT).
+
+% \begin{frame}{Why Misalignment Bloats PMP Usage}
+% \small
+% \vfill
+
+% % Problem
+% \only<1>{
+% \begin{block}{Problem}
+% Physical Memory Protection (PMP) entries must cover power‑of‑two sized, naturally aligned regions (NAPOT).
+% \end{block}
+% }
+
+% % Cause
+% \only<2>{
+% \begin{block}{Problem}
+% Physical Memory Protection (PMP) entries must cover power‑of‑two sized, naturally aligned regions (NAPOT).
+% \end{block}
+% \vspace{0.5em}
+% \begin{block}{Cause}
+% When a memory region is \textbf{misaligned}:
+% \begin{itemize}
+%   \item NAPOT encoding forces padding to the next power‑of‑two boundary.
+%   \item Padding areas consume PMP coverage even if they are not actual data.
+% \end{itemize}
+% \end{block}
+% % \draw[->, thick] (0,-0.2) -- (0,-0.8); % optional arrow from Problem → Cause
+% }
+
+% % Effect
+% \only<3>{
+% \begin{block}{Cause}
+% When a memory region is \textbf{misaligned}:
+% \begin{itemize}
+%   \item NAPOT encoding forces padding to the next power‑of‑two boundary.
+%   \item Padding areas consume PMP coverage even if they are not actual data.
+% \end{itemize}
+% \end{block}
+% \vspace{0.5em}
+% \begin{block}{Effect}
+% \begin{itemize}
+%   \item A single logical region may require \textbf{multiple PMP entries}.
+%   \item Fragmentation increases as more regions are misaligned.
+% \end{itemize}
+% \end{block}
+% % \draw[->, thick] (0,-0.2) -- (0,-0.8); % optional arrow from Cause → Effect
+% }
+
+% % Impact
+% \only<4>{
+% \begin{block}{Effect}
+% \begin{itemize}
+%   \item A single logical region may require \textbf{multiple PMP entries}.
+%   \item Fragmentation increases as more regions are misaligned.
+% \end{itemize}
+% \end{block}
+% \vspace{0.5em}
+% \begin{block}{Impact}
+% \begin{itemize}
+%   \item Higher PMP entry count $\Rightarrow$ fewer entries left for other regions.
+%   \item Limits scalability and flexibility of memory protection.
+%   \item Wastes address space and complicates security policy.
+% \end{itemize}
+% \end{block}
+% }
+
+% % Key takeaway
+% \only<5>{
+% \centering
+% \begin{figure}[htbp]
+% \centering
+% \begin{tikzpicture}[scale=1, transform shape,font=\small]
+
+% % Memory axis
+% \draw[thick,->] (0,0) -- (10,0) node[anchor=west]{Memory address};
+% \foreach \x/\label in {0/0\,KB,1.25/128\,KB,4.25/192\,KB,8/300\,KB}
+%     \draw (\x,0.1) -- (\x,-0.1) node[anchor=north]{\label};
+
+% % === Region 1: contiguous, 1 PMP entry ===
+% \node[anchor=south] at (1.375,2.1) {\scriptsize 128\,KB aligned};
+% %\draw[pattern=north east lines,pattern color=black] (0.25,0) rectangle (0.5,1);
+% \draw[fill=keystoneblue!60] (0.5,0) rectangle (2.2,1);
+% %\draw[pattern=north east lines,pattern color=black] (2.2,0) rectangle (2.5,1);
+% \draw[fill=keystoneblue!60,opacity=0.4] (0.5,1) rectangle (2.2,2) node[pos=.5] {\scriptsize 1 entry};
+
+% % === Region 2: fragmented, 3 PMP entries ===
+% \node[anchor=south] at (4.3,4.1) {\scriptsize 192\,KB misaligned};
+% \draw[pattern=north east lines,pattern color=black] (3.5,0) rectangle (3.8,1);
+% \draw[fill=warmaccent!60] (3.8,0) rectangle (4.6,1);
+% \draw[pattern=north east lines,pattern color=black] (4.6,0) rectangle (5.1,1);
+% \draw[fill=warmaccent!60,opacity=0.4] (3.5,1) rectangle (5.1,4) node[pos=.5] {\scriptsize 3 entries};
+
+% % === Region 3: fragmented, 3 PMP entries ===
+% \node[anchor=south] at (8.0,4.1) {\scriptsize 300\,KB misaligned};
+% \draw[pattern=north east lines,pattern color=black] (6.7,0) rectangle (7.0,1);
+% \draw[fill=warmaccent!60] (7.0,0) rectangle (9.1,1);
+% \draw[pattern=north east lines,pattern color=black] (9.1,0) rectangle (9.3,1);
+% \draw[fill=warmaccent!60,opacity=0.4] (6.7,1) rectangle (9.3,4) node[pos=.5] {\scriptsize 3 entries};
+
+% % Arrows showing cause-effect
+% %\draw[->,thick] (2.2,0.5) .. controls (2.8,1.5) .. (3.4,2) node[midway,above,sloped]{\scriptsize Padding $\Rightarrow$ More entries};
+% \draw[->,thick] (5.1,0.5) .. controls (5.4,2) .. (6.6,2.5) node[midway,above,sloped]{\scriptsize Padding $\Rightarrow$ More entries};
+
+% % Legend
+% \begin{scope}[xshift=0cm,yshift=-1.5cm]
+% \draw[fill=keystoneblue!60] (0,0) rectangle (0.4,0.4) node[right=0.5cm] {Contiguous region};
+% \draw[fill=warmaccent!60] (5,0) rectangle (5.4,0.4) node[right=0.5cm] {Fragmented region};
+% \draw[pattern=north east lines,pattern color=black] (0,-0.6) rectangle (0.4,-0.2) node[right=0.5cm] {Wasted padding};
+% \draw[fill=gray!50,opacity=0.4] (5,-0.6) rectangle (5.4,-0.2) node[right=0.5cm] {PMP entry count bar};
+% \end{scope}
+
+% \end{tikzpicture}
+
+% \vspace{0.4em}
+% \scriptsize
+% \textbf{Takeaway:} Align regions to NAPOT boundaries to minimize padding and preserve PMP entries.
+% \end{figure}
+% }
+
+% \vfill
+% \end{frame}
+
+\begin{frame}{PMP Entries vs Max Concurrent Enclaves}
+\centering
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10cm,
+    height=6cm,
+    xlabel={PMP Entries},
+    ylabel={Max Concurrent Enclaves},
+    xmin=0, xmax=16,
+    ymin=0, ymax=16,
+    xtick={0,4,8,12,16},
+    ymajorgrids,
+    grid style=dashed,
+    mark options={solid},
+    nodes near coords,
+    every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
+    clip=false,
+    cycle list={{teal,mark=*,thick}},
+    tick label style={font=\small},
+    label style={font=\small\bfseries},
+]
+
+% Data plot
+\addplot[
+    color=teal,
+    mark=*,
+    thick
+] coordinates {
+    (0,0) (2,2) (4,4) (6,6) (8,8) (10,8) (12,8) (14,8) (16,8)
+};
+
+% Highlight PMP exhaustion area
+\fill[red!30,opacity=0.4] (axis cs:8,0) rectangle (axis cs:16,16);
+
+% Annotation inside shaded region
+\node[red, align=center, font=\footnotesize\bfseries] at (axis cs:12,12) {PMP Exhaustion \\ Caps at 8 Enclaves};
+
+% Stability boundary line & label
+\draw[dashed, thick, color=blue] (axis cs:4,0) -- (axis cs:4,16);
+\node[anchor=south, font=\footnotesize\bfseries, color=blue] at (axis cs:4,16) {Stability Boundary};
+
+\end{axis}
+\end{tikzpicture}
+\caption{Max enclaves increase with PMP entries until exhaustion caps growth.}
+\end{figure}
+\end{frame}
+
+\begin{frame}{PMP Misalignment: Why It Matters}
+\begin{block}{The Problem}
+PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misaligned memory allocations cause unnecessary padding.
 \end{block}
-\vspace{0.5em}
-\begin{block}{Cause}
-When a memory region is \textbf{misaligned}:
+
+\begin{block}{The Effect}
 \begin{itemize}
-  \item NAPOT encoding forces padding to the next power‑of‑two boundary.
-  \item Padding areas consume PMP coverage even if they are not actual data.
+    \item Misalignment causes a single memory region to consume multiple PMP entries.
+    \item Fragmentation leads to rapid exhaustion of PMP resources (max = 16 entries).
 \end{itemize}
 \end{block}
-% \draw[->, thick] (0,-0.2) -- (0,-0.8); % optional arrow from Problem → Cause
-}
 
-% Effect
-\only<3>{
-\begin{block}{Cause}
-When a memory region is \textbf{misaligned}:
-\begin{itemize}
-  \item NAPOT encoding forces padding to the next power‑of‑two boundary.
-  \item Padding areas consume PMP coverage even if they are not actual data.
-\end{itemize}
-\end{block}
-\vspace{0.5em}
-\begin{block}{Effect}
-\begin{itemize}
-  \item A single logical region may require \textbf{multiple PMP entries}.
-  \item Fragmentation increases as more regions are misaligned.
-\end{itemize}
-\end{block}
-% \draw[->, thick] (0,-0.2) -- (0,-0.8); % optional arrow from Cause → Effect
-}
+\vspace{1em}
+\centering
+\textbf{Next: Visualizing the impact →}
+\end{frame}
 
-% Impact
-\only<4>{
-\begin{block}{Effect}
-\begin{itemize}
-  \item A single logical region may require \textbf{multiple PMP entries}.
-  \item Fragmentation increases as more regions are misaligned.
-\end{itemize}
-\end{block}
-\vspace{0.5em}
-\begin{block}{Impact}
-\begin{itemize}
-  \item Higher PMP entry count $\Rightarrow$ fewer entries left for other regions.
-  \item Limits scalability and flexibility of memory protection.
-  \item Wastes address space and complicates security policy.
-\end{itemize}
-\end{block}
-}
-
-% Key takeaway
-\only<5>{
+\begin{frame}{PMP Misalignment: Visualized}
 \centering
 \begin{figure}[htbp]
 \centering
@@ -502,9 +633,7 @@ When a memory region is \textbf{misaligned}:
 
 % === Region 1: contiguous, 1 PMP entry ===
 \node[anchor=south] at (1.375,2.1) {\scriptsize 128\,KB aligned};
-%\draw[pattern=north east lines,pattern color=black] (0.25,0) rectangle (0.5,1);
 \draw[fill=keystoneblue!60] (0.5,0) rectangle (2.2,1);
-%\draw[pattern=north east lines,pattern color=black] (2.2,0) rectangle (2.5,1);
 \draw[fill=keystoneblue!60,opacity=0.4] (0.5,1) rectangle (2.2,2) node[pos=.5] {\scriptsize 1 entry};
 
 % === Region 2: fragmented, 3 PMP entries ===
@@ -522,7 +651,6 @@ When a memory region is \textbf{misaligned}:
 \draw[fill=warmaccent!60,opacity=0.4] (6.7,1) rectangle (9.3,4) node[pos=.5] {\scriptsize 3 entries};
 
 % Arrows showing cause-effect
-%\draw[->,thick] (2.2,0.5) .. controls (2.8,1.5) .. (3.4,2) node[midway,above,sloped]{\scriptsize Padding $\Rightarrow$ More entries};
 \draw[->,thick] (5.1,0.5) .. controls (5.4,2) .. (6.6,2.5) node[midway,above,sloped]{\scriptsize Padding $\Rightarrow$ More entries};
 
 % Legend
@@ -539,9 +667,6 @@ When a memory region is \textbf{misaligned}:
 \scriptsize
 \textbf{Takeaway:} Align regions to NAPOT boundaries to minimize padding and preserve PMP entries.
 \end{figure}
-}
-
-\vfill
 \end{frame}
 
 % Optimizations for Keystone Enclaves
@@ -569,10 +694,10 @@ When a memory region is \textbf{misaligned}:
 ]
 
 % Cloud
-\node[box, fill=blue!20] (cloud) {\includegraphics[scale=0.05]{example-image} \\ \textbf{Cloud Server} \\ (Untrusted Environment)};
+\node[box, fill=blue!20] (cloud) {\faCloud \\ \textbf{Cloud Server} \\ (Untrusted Environment)};
 
 % Lock / Enclave
-\node[box, fill=green!20, right=3cm of cloud] (enclave) {\faLock \\ \textbf{Keystone Enclave} \\ Secure Execution};
+\node[box, fill=green!20, right=3cm of cloud] (enclave) {\faLock \\ \textbf{Keystone Enclave} \\ Trusted Execution};
 
 % Data source
 \node[data, left=3cm of cloud] (client) {\faUser \\ \textbf{Client Data}};
@@ -601,12 +726,21 @@ When a memory region is \textbf{misaligned}:
 \end{itemize}
 \end{frame}
 
-% Summary of Findings
-\begin{frame}{Key Takeaways}
+% % Summary of Findings
+% \begin{frame}{Key Takeaways}
+% \begin{itemize}
+%     \item Keystone offers strong security with minimal overhead for CPU-bound workloads.
+%     \item Significant overhead for memory bound tasks can be reduced with optimizations.
+%     \item Customizable settings allow for optimization based on workload type.
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Summary of Findings}
 \begin{itemize}
-    \item Keystone offers strong security with minimal overhead for CPU-bound workloads.
-    \item Significant overhead for memory bound tasks can be reduced with optimizations.
-    \item Customizable settings allow for optimization based on workload type.
+    \item \textbf{Keystone offers low-overhead enclaves} for CPU-bound workloads.
+    \item \textbf{Memory-bound performance degrades} due to PMP overhead and context switching.
+    \item \textbf{Scalability limited} by fixed PMP entries and misaligned region padding.
+    \item \textbf{Performance can be improved} via alignment and workload partitioning strategies.
 \end{itemize}
 \end{frame}
 
