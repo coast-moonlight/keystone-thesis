@@ -200,16 +200,16 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     \uncover<4->{\textbf{Platform Configuration: QEMU-based emulation ensures controlled environment for testing.}}
 \end{frame}
 
-\begin{frame}{QEMU-Based Virtualized Environment}
-    \small
-    \begin{itemize}
-        \item QEMU emulates RISC-V architecture for repeatability and control. \pause
-        \item Ensures consistent test conditions by eliminating hardware-induced variations (thermal throttling, cache behavior). \pause
-        \item Configured for RV64GC architecture, as required by Keystone. \pause
-    \end{itemize}
-    \vspace{0.5em}
-    \uncover<4->{\textbf{Why QEMU?} Provides a controlled, consistent environment for repeatability.}
-\end{frame}
+% \begin{frame}{QEMU-Based Virtualized Environment}
+%     \small
+%     \begin{itemize}
+%         \item QEMU emulates RISC-V architecture for repeatability and control. \pause
+%         \item Ensures consistent test conditions by eliminating hardware-induced variations (thermal throttling, cache behavior). \pause
+%         \item Configured for RV64GC architecture, as required by Keystone. \pause
+%     \end{itemize}
+%     \vspace{0.5em}
+%     \uncover<4->{\textbf{Why QEMU?} Provides a controlled, consistent environment for repeatability.}
+% \end{frame}
 
 \begin{frame}{Benchmarking Workflow}
     \small
@@ -563,7 +563,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     width=10cm,
     height=6cm,
     xlabel={PMP Entries},
-    ylabel={Max Concurrent Enclaves},
+    ylabel={Concurrent Enclaves},
     xmin=0, xmax=16,
     ymin=0, ymax=16,
     xtick={0,4,8,12,16},
@@ -590,8 +590,12 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 % Highlight PMP exhaustion area
 \fill[red!30,opacity=0.4] (axis cs:8,0) rectangle (axis cs:16,16);
 
+% Add Yellow Sliding Zone (between 4 and 8 PMP entries)
+\fill[yellow!30, opacity=0.6] (axis cs:4,0) rectangle (axis cs:8,16);
+
 % Annotation inside shaded region
 \node[red, align=center, font=\footnotesize\bfseries] at (axis cs:12,12) {PMP Exhaustion \\ Caps at 8 Enclaves};
+\node[align=center, font=\footnotesize\bfseries, text=black] at (axis cs:6,12) {Sliding Zone};
 
 % Stability boundary line & label
 \draw[dashed, thick, color=blue] (axis cs:4,0) -- (axis cs:4,16);
