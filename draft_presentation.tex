@@ -670,13 +670,102 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 \end{frame}
 
 % Optimizations for Keystone Enclaves
-\begin{frame}{Optimizations for Keystone Enclaves}
+% \begin{frame}{Optimizations for Keystone Enclaves}
+% \begin{itemize}
+%     \item Use contiguous, NAPOT-aligned memory to minimize PMP usage.
+%     \item Consolidate workloads and limit active enclaves to reduce contention.
+%     \item Offload non-sensitive tasks to the untrusted domain.
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Deployment Takeaways}
+\begin{block}{Best Practices}
 \begin{itemize}
-    \item Use contiguous, NAPOT-aligned memory to minimize PMP usage.
-    \item Consolidate workloads and limit active enclaves to reduce contention.
-    \item Offload non-sensitive tasks to the untrusted domain.
+    \item Use NAPOT-aligned, contiguous memory regions.
+    \item Consolidate workloads into fewer enclaves.
+    \item Batch calls to reduce context switches.
 \end{itemize}
+\end{block}
+
+\begin{alertblock}{Key Principle}
+Balance performance, isolation, and PMP resource use.
+\end{alertblock}
 \end{frame}
+
+
+% \begin{frame}{Memory Configuration Strategies}
+% \begin{block}{Key Practices}
+% \begin{itemize}
+%     \item Use \textbf{NAPOT-aligned, contiguous memory} for enclaves.
+%     \item Avoid fragmentation to conserve PMP entries.
+% \end{itemize}
+% \end{block}
+
+% \begin{block}{Trade-Offs}
+% \begin{itemize}
+%     \item Larger regions improve performance (fewer faults, better locality).
+%     \item But excessive size leads to wasted PMP entries.
+% \end{itemize}
+% \end{block}
+% \end{frame}
+
+% \begin{frame}{CPU Scaling Considerations}
+% \begin{block}{Observations}
+% \begin{itemize}
+%     \item Performance improves up to \textasciitilde{}4 cores.
+%     \item Beyond that, overhead from context switches and sync dominates.
+% \end{itemize}
+% \end{block}
+
+% \begin{alertblock}{Recommendation}
+% Use enclaves for \textbf{compute-bound workloads} (e.g., CoreMark), not memory-bound ones (e.g., Kyber).
+% \end{alertblock}
+% \end{frame}
+
+\begin{frame}{Workload-Aware Enclave Design}
+\begin{block}{Hybrid Cryptographic Workloads}
+\begin{itemize}
+    \item Keep keys inside enclaves.
+    \item Offload bulk crypto outside to reduce overhead.
+\end{itemize}
+\end{block}
+
+\begin{block}{Target Use Cases}
+\begin{itemize}
+    \item Isolate sensitive logic (e.g., ML inference, attestation).
+    \item Avoid enclaves for memory-bound workloads like Kyber.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Enclave Concurrency and Multiplexing}
+\begin{block}{Problem}
+Too many active enclaves → PMP exhaustion, context switch cost.
+\end{block}
+\begin{alertblock}{Solution}
+Use enclave multiplexing: combine tasks into fewer enclaves.
+\end{alertblock}
+\begin{block}{Bonus}
+Dynamic PMP reallocation can further improve scalability.
+\end{block}
+\end{frame}
+
+% \begin{frame}{Runtime Optimization}
+% \begin{block}{Key Ideas}
+% \begin{itemize}
+%     \item \textbf{Batch enclave calls} to reduce switch overhead.
+%     \item Use \textbf{dynamic PMP assignment} based on active workloads.
+% \end{itemize}
+% \end{block}
+
+% \begin{block}{Lifecycle Management}
+% \begin{itemize}
+%     \item Reuse enclaves across tasks.
+%     \item Scale resources based on current demand.
+% \end{itemize}
+% \end{block}
+% \end{frame}
+
 
 % Real-World Applications of Keystone Enclaves
 \begin{frame}{Real-World Applications of Keystone Enclaves}
@@ -717,14 +806,23 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 
 
 % Future Work and Improvements
-\begin{frame}{Future Work and Improvements}
+\begin{frame}{Hardware Outlook \& Future Directions}
+\begin{block}{Limitations}
 \begin{itemize}
-    \item Performance optimizations with hardware extensions.
-    \item Multi-enclave systems for more complex use cases.
-    %\item Research on side-channel attacks and improved security measures.
-    \item Development of better developer tools for enclave management.
+    \item Few PMP entries.
+    \item Rigid NAPOT region encoding.
 \end{itemize}
+\end{block}
+
+\begin{alertblock}{Future Opportunities}
+\begin{itemize}
+    \item More flexible PMP schemes.
+    \item Crypto accelerators for enclave workloads.
+    \item Software-defined memory isolation models.
+\end{itemize}
+\end{alertblock}
 \end{frame}
+
 
 % % Summary of Findings
 % \begin{frame}{Key Takeaways}
@@ -735,14 +833,20 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 % \end{itemize}
 % \end{frame}
 
-\begin{frame}{Summary of Findings}
-\begin{itemize}
-    \item \textbf{Keystone offers low-overhead enclaves} for CPU-bound workloads.
-    \item \textbf{Memory-bound performance degrades} due to PMP overhead and context switching.
-    \item \textbf{Scalability limited} by fixed PMP entries and misaligned region padding.
-    \item \textbf{Performance can be improved} via alignment and workload partitioning strategies.
-\end{itemize}
-\end{frame}
+% \begin{frame}{Summary of Best Practices}
+% \begin{block}{Configuration Tips}
+% \begin{itemize}
+%     \item Use \textbf{NAPOT-aligned contiguous memory}.
+%     \item \textbf{Limit concurrent enclaves}; favor multiplexing.
+%     \item Offload non-sensitive tasks.
+%     \item Batch calls, manage PMP dynamically.
+% \end{itemize}
+% \end{block}
+
+% \begin{alertblock}{Design Principles}
+% \textbf{Balance} isolation, performance, and scalability.
+% \end{alertblock}
+% \end{frame}
 
 % Conclusion
 \begin{frame}{Conclusion}
