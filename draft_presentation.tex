@@ -137,34 +137,43 @@ Examples include:
 
 % Keystone 
 \begin{frame}{From Problem to Solution: Enter Keystone}
+    \only<1>{
+\begin{block}{What is Keystone?}
 \begin{itemize}
     \item Modular, open-source TEE for RISC-V.
     \item Uses Physical Memory Protection (PMP) and minimal Security Monitor for isolation.
     \item Low Trusted Computing Base (TCB) for security and flexibility.
-    \item Optimized for secure computation in untrusted environments.
+    %\item Optimized for secure computation in untrusted environments.
 \end{itemize}
-\begin{block}{Key Concept}
-\textit{Low TCB reduces attack surfaces while enabling high flexibility and performance in enclave-based systems.}
 \end{block}
-\end{frame}
+    }
+% \begin{block}{Key Concept}
+% \textit{Low TCB reduces attack surfaces while enabling high flexibility and performance in enclave-based systems.}
+% \end{block}
+%\end{frame}
 
 % Keystone Framework Architecture
-\begin{frame}{Keystone Framework Architecture}
-\begin{block}{Overview}
-    Keystone is designed to be modular, with clear isolation between enclaves and the OS.
-\end{block}
-
+%\begin{frame}{Keystone Framework Architecture}
+%     \only<1>{
+% \begin{block}{Overview}
+%     Keystone is designed to be modular, with clear isolation between enclaves and the OS.
+% \end{block}
+%     }
+%     \only<2>{
 %\resizebox{\linewidth}{!}{%
+\only<2>{
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{/home/individual-01/Documents/keystone-thesis/figures/keystone_overview.png}
-%\caption{Keystone architecture showing components such as the Security Monitor, enclave runtime, and the privilege hierarchy.}
+\caption{Keystone architecture showing components such as the Security Monitor, enclave runtime, and the privilege hierarchy.}
 \label{fig:keystone_grouped}
 \end{figure}
-\end{frame}
+    }
+%\end{frame}
 
 % Keystone vs Other TEEs
-\begin{frame}{Keystone vs. Other TEEs}
+%\begin{frame}{Keystone vs. Other TEEs}
+\only<3>{
 \begin{figure}[htbp]
 \centering
 \renewcommand{\arraystretch}{1.3} % more row height
@@ -186,7 +195,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \caption{Feature comparison of major TEEs.}
 \label{fig:tee-features}
 \end{figure}
-
+}
 \end{frame}
 
 \begin{frame}{System Design and Methodology}
@@ -314,26 +323,34 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 
 \begin{frame}{Enclave Overhead and System Behavior}
 \small
+% First overlay: text only
+\only<1>{
 \begin{block}{Performance Overhead}
 \begin{itemize}
-    \item \textbf{Enclave execution} introduces overhead: 10\% to 15\%.
-    \item \textbf{Compute-bound workloads} (CoreMark, Dhrystone) see minimal performance loss.
-    \item \textbf{Memory-bound workloads} (Kyber) experience severe slowdowns due to added security checks and memory isolation.
+    \item \textbf{Enclave execution} introduces overhead:
+        \begin{itemize}
+            \item Compute-bound workloads like CoreMark and Dhrystone incur moderate overhead of 1.06$\times$ to 1.61$\times$.
+            \item Hybrid workloads (Compute- and memory-bound) like Kyber suffer severe overhead, up to 2.73$\times$.
+        \end{itemize}
+    %\item \textbf{Memory-bound workloads} experience significant penalties due to enclave-induced memory isolation and security checks.
 \end{itemize}
 \end{block}
-
+}
+% Second overlay: add figure
+\only<2>{
 \begin{block}{Overhead Breakdown}
 \begin{itemize}
     \item Memory isolation via PMP adds fixed latency per memory access.
     \item Context switches between host and enclave domains are costly.
 \end{itemize}
 \end{block}
-
-\centering
-\textbf{Key Insight:} Overhead varies based on workload characteristics and memory behavior.
-\end{frame}
-
-\begin{frame}{Performance Trends and Hardware Bottlenecks}
+}
+% \centering
+% \textbf{Key Insight:} Overhead varies based on workload characteristics and memory behavior.
+% \end{frame}
+% Figure appears only on the second slide of this frame
+\only<3>{
+% \begin{frame}{Performance Trends and Hardware Bottlenecks}
 \centering
 \begin{figure}[htbp]
 \centering
@@ -354,14 +371,6 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1}
 ]
 
-% Enclave: blue, rounded top, transparency
-\addplot[
-    fill={rgb,255:red,0; green,114; blue,178},
-    fill opacity=0.8,
-    draw=black!60,
-    rounded corners=2pt
-] coordinates {(CoreMark,95) (Dhrystone,62) (Kyber,37)};
-
 % Native: orange, rounded top, transparency
 \addplot[
     fill={rgb,255:red,230; green,159; blue,0},
@@ -370,11 +379,20 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     rounded corners=2pt
 ] coordinates {(CoreMark,100) (Dhrystone,100) (Kyber,100)};
 
-\legend{Enclave,Native}
+% Enclave: blue, rounded top, transparency
+\addplot[
+    fill={rgb,255:red,0; green,114; blue,178},
+    fill opacity=0.8,
+    draw=black!60,
+    rounded corners=2pt
+] coordinates {(CoreMark,95) (Dhrystone,62) (Kyber,37)};
+
+\legend{Native,Enclave}
 \end{axis}
 \end{tikzpicture}
 \caption{Relative performance of enclave vs native execution.}
 \end{figure}
+}
 \end{frame}
 
 \begin{frame}{Impact of Scalability Limitations}
@@ -399,6 +417,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 
 \begin{frame}{PMP Entry Exhaustion and Multi-Enclave Scalability}
 \small
+\only<1>{
 \begin{block}{PMP Resource Limitations}
 \begin{itemize}
     \item \textbf{Maximum PMP entries}: 16.
@@ -406,17 +425,19 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     \item Failure due to PMP exhaustion: \texttt{SBI error codes}.
 \end{itemize}
 \end{block}
-
+}
+\only<2>{
 \begin{block}{Scalability Bottleneck}
 \begin{itemize}
     \item In \textbf{multi-tenant environments}, PMP exhaustion limits the number of concurrent enclaves.
     \item This creates scalability issues, especially for high-concurrency workloads.
 \end{itemize}
 \end{block}
+}
 
-\centering
-\textbf{Key Insight:} PMP limitations represent a significant scalability bottleneck for RISC-V enclave-based systems.
-\end{frame}
+% \centering
+% \textbf{Key Insight:} PMP limitations represent a significant scalability bottleneck for RISC-V enclave-based systems.
+% \end{frame}
 
 
 % \begin{frame}{Key Takeaways from Performance Trends}
@@ -554,8 +575,9 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 % \vfill
 % \end{frame}
 
-\begin{frame}{PMP Entries vs Max Concurrent Enclaves}
-\centering
+% \begin{frame}{PMP Entries vs Max Concurrent Enclaves}
+% \centering
+\only<3>{
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
@@ -605,27 +627,31 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \end{tikzpicture}
 \caption{Max enclaves increase with PMP entries until exhaustion caps growth.}
 \end{figure}
+}
 \end{frame}
 
 \begin{frame}{PMP Misalignment: Why It Matters}
+    \only<1>{
 \begin{block}{The Problem}
 PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misaligned memory allocations cause unnecessary padding.
 \end{block}
+    }
+%     \only<2>{
+% \begin{block}{The Effect}
+% \begin{itemize}
+%     \item Misalignment causes a single memory region to consume multiple PMP entries.
+%     \item Fragmentation leads to rapid exhaustion of PMP resources (max = 16 entries).
+% \end{itemize}
+% \end{block}
 
-\begin{block}{The Effect}
-\begin{itemize}
-    \item Misalignment causes a single memory region to consume multiple PMP entries.
-    \item Fragmentation leads to rapid exhaustion of PMP resources (max = 16 entries).
-\end{itemize}
-\end{block}
-
-\vspace{1em}
-\centering
-\textbf{Next: Visualizing the impact →}
-\end{frame}
-
-\begin{frame}{PMP Misalignment: Visualized}
-\centering
+% \vspace{1em}
+% \centering
+% \textbf{Next: Visualizing the impact →}
+%\end{frame}
+%     }
+    \only<2>{
+%\begin{frame}{PMP Misalignment: Visualized}
+%\centering
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[scale=1, transform shape,font=\small]
@@ -671,6 +697,7 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 \scriptsize
 \textbf{Takeaway:} Align regions to NAPOT boundaries to minimize padding and preserve PMP entries.
 \end{figure}
+    }
 \end{frame}
 
 % Optimizations for Keystone Enclaves
@@ -688,11 +715,12 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
     \item Use NAPOT-aligned, contiguous memory regions.
     \item Consolidate workloads into fewer enclaves.
     \item Batch calls to reduce context switches.
+    \item Adapt enclave usage based on task complexity.
 \end{itemize}
 \end{block}
 
 \begin{alertblock}{Key Principle}
-Balance performance, isolation, and PMP resource use.
+    Balance performance, isolation, and PMP resource usage for optimal efficiency.
 \end{alertblock}
 \end{frame}
 
@@ -726,33 +754,37 @@ Balance performance, isolation, and PMP resource use.
 % \end{alertblock}
 % \end{frame}
 
-\begin{frame}{Workload-Aware Enclave Design}
-\begin{block}{Hybrid Cryptographic Workloads}
-\begin{itemize}
-    \item Keep keys inside enclaves.
-    \item Offload bulk crypto outside to reduce overhead.
-\end{itemize}
-\end{block}
+% \begin{frame}{Workload-Aware Enclave Design}
+% \begin{block}{Hybrid Cryptographic Workloads}
+% \begin{itemize}
+%     \item Keep keys inside enclaves.
+%     \item Offload bulk crypto operations outside to reduce overhead.
+% \end{itemize}
+% \end{block}
 
-\begin{block}{Target Use Cases}
-\begin{itemize}
-    \item Isolate sensitive logic (e.g., ML inference, attestation).
-    \item Avoid enclaves for memory-bound workloads like Kyber.
-\end{itemize}
-\end{block}
-\end{frame}
+% \begin{block}{Target Use Cases}
+% \begin{itemize}
+%     \item Isolate sensitive logic (e.g., ML inference, attestation).
+%     \item Avoid enclaves for high-memory or parallel tasks. (e.g., bulk cryptographic ops.)
+% \end{itemize}
+% \end{block}
+% \end{frame}
 
-\begin{frame}{Enclave Concurrency and Multiplexing}
-\begin{block}{Problem}
-Too many active enclaves → PMP exhaustion, context switch cost.
-\end{block}
-\begin{alertblock}{Solution}
-Use enclave multiplexing: combine tasks into fewer enclaves.
-\end{alertblock}
-\begin{block}{Bonus}
-Dynamic PMP reallocation can further improve scalability.
-\end{block}
-\end{frame}
+% \begin{frame}{Enclave Concurrency and Multiplexing}
+%     \uncover<1->{
+% \begin{block}{Problem}
+% Too many active enclaves → PMP exhaustion, context switch cost.
+% \end{block}
+%     }
+%     \uncover<2->{
+% \begin{alertblock}{Solution}
+% Use enclave multiplexing: combine tasks into fewer enclaves.
+% \end{alertblock}
+% \begin{block}{Bonus}
+% Dynamic PMP reallocation can further improve scalability.
+% \end{block}
+%     }
+% \end{frame}
 
 % \begin{frame}{Runtime Optimization}
 % \begin{block}{Key Ideas}
@@ -811,13 +843,15 @@ Dynamic PMP reallocation can further improve scalability.
 
 % Future Work and Improvements
 \begin{frame}{Hardware Outlook \& Future Directions}
+    \only<1>{
 \begin{block}{Limitations}
 \begin{itemize}
     \item Few PMP entries.
     \item Rigid NAPOT region encoding.
 \end{itemize}
 \end{block}
-
+    }
+    \only<2>{
 \begin{alertblock}{Future Opportunities}
 \begin{itemize}
     \item More flexible PMP schemes.
@@ -825,6 +859,7 @@ Dynamic PMP reallocation can further improve scalability.
     \item Software-defined memory isolation models.
 \end{itemize}
 \end{alertblock}
+    }
 \end{frame}
 
 
