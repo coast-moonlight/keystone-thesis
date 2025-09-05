@@ -99,6 +99,8 @@ No comprehensive, benchmarked assessment of \\
 \end{itemize}
 \end{frame}
 
+\section{Background and System Design}
+
 % Background on TEEs (Added icons for clarity)
 \begin{frame}{Background: TEEs in a Nutshell}
 \begin{block}{Definition}
@@ -197,6 +199,8 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \end{figure}
 }
 \end{frame}
+
+\section{Experimental Setup}
 
 \begin{frame}{System Design and Methodology}
     \small
@@ -318,7 +322,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 % \end{frame}
 
 %Results
-\section{Key Performance Trends and Hardware Bottlenecks}
+\section{Results and Hardware Bottlenecks}
 \label{sec:synthesis}
 
 \begin{frame}{Enclave Overhead and System Behavior}
@@ -371,7 +375,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1}
 ]
 
-% Native: orange, rounded top, transparency
+% Native: orange, rounded top, tranRecommendationssparency
 \addplot[
     fill={rgb,255:red,230; green,159; blue,0},
     fill opacity=0.8,
@@ -709,19 +713,160 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 % \end{itemize}
 % \end{frame}
 
+\section{Practical Deployment Strategies and Recommendations}
+
 \begin{frame}{Deployment Takeaways}
 \begin{block}{Best Practices}
 \begin{itemize}
-    \item Use NAPOT-aligned, contiguous memory regions.
-    \item Consolidate workloads into fewer enclaves.
-    \item Batch calls to reduce context switches.
-    \item Adapt enclave usage based on task complexity.
+    \only<1>{\item \faMemory\ \textbf{Align memory precisely:} Use NAPOT-aligned, contiguous regions to simplify PMP configuration.}
+    \only<2>{\item \faProjectDiagram\ \textbf{Minimize enclave count:} Consolidate workloads to reduce PMP entry usage and management overhead.
+    \begin{tikzpicture}[font=\scriptsize,>=stealth]
+
+% --- BEFORE: Multiple enclaves ---
+\node[anchor=west] at (-0.5,2.5) {\textbf{Before: Multiple Enclaves}};
+\foreach \i in {0,2.5,5} {
+  % Enclave box
+  \draw[fill=red!20,thick] (\i,1) rectangle +(2,1);
+  \node at (\i+1,2.15) {Enclave};
+  % Task inside
+  \draw[fill=blue!10,thick] (\i+0.5,1.2) rectangle +(1,0.6);
+  \node at (\i+1,1.5) {Task};
+}
+
+% Arrow between before and after (shorter gap)
+\draw[->,thick] (3.5,0.8) -- (3.5,0.2) node[midway,right]{\textbf{Merge}};
+
+% --- AFTER: Single consolidated enclave (moved up) ---
+\node[anchor=west] at (-0.5,-0.6) {\textbf{After: Single Enclave}};
+\draw[fill=green!20,thick] (0,-1.8) rectangle (7,-0.8);
+\node at (3.5,-2.05) {Single Consolidated Enclave};
+
+% Tasks inside consolidated enclave
+\foreach \i in {0.5,3,5.5} {
+  \draw[fill=blue!10,thick] (\i,-1.6) rectangle +(1,0.6);
+  \node at (\i+0.5,-1.3) {Task};
+}
+
+% Optional legend
+\begin{scope}[shift={(8,0)}]
+  \draw[fill=red!20] (0,1.5) rectangle +(0.5,0.3);
+  \node[right] at (0.6,1.65) {Separate Enclave};
+  \draw[fill=green!20] (0,1) rectangle +(0.5,0.3);
+  \node[right] at (0.6,1.15) {Consolidated Enclave};
+  \draw[fill=blue!10] (0,0.5) rectangle +(0.5,0.3);
+  \node[right] at (0.6,0.65) {Task};
+\end{scope}
+
+
+\end{tikzpicture}
+
+    }
+    \only<3>{\item \faRetweet\ \textbf{Reduce switching costs:} Batch enclave calls to limit context switches and improve throughput.
+    \begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth,thick,font=\scriptsize,scale=0.9]
+  % === Left: Unbatched ===
+  \fill[green!10] (0,0) rectangle (2.5,2.5);
+  \fill[blue!10] (2.5,0) rectangle (5,2.5);
+
+  \node at (1.25,2.7) {\textbf{Enclave}};
+  \node at (3.75,2.7) {\textbf{Host}};
+
+  \draw[dashed,thick] (2.5,0) -- (2.5,2.5) node[midway,above,sloped];
+
+  \draw[->,red!70!black] (0.8,2.0) -- (3.2,2.0) node[midway,above]{Call 1};
+  \draw[->,red!70!black] (0.8,1.4) -- (3.2,1.4) node[midway,above]{Call 2};
+  \draw[->,red!70!black] (0.8,0.8) -- (3.2,0.8) node[midway,above]{Call 3};
+
+  \node[align=center] at (2.5,-0.6) {\textbf{Unbatched}\\Multiple crossings};
+
+  % === Right: Batched ===
+  \begin{scope}[shift={(6,0)}]
+    \fill[green!10] (0,0) rectangle (2.5,2.5);
+    \fill[blue!10] (2.5,0) rectangle (5,2.5);
+
+    \node at (1.25,2.7) {\textbf{Enclave}};
+    \node at (3.75,2.7) {\textbf{Host}};
+
+    \draw[dashed,thick] (2.5,0) -- (2.5,2.5) node[midway,above,sloped];
+
+\draw[->,red!70!black,thick] (0.8,1.3) -- (2.8,1.3) 
+    node[midway,above]{Batched Call}
+    node[midway,below=4pt,draw,fill=orange!20,rounded corners=2pt,
+         inner xsep=4pt,inner ysep=2pt]{Batch Processor};
+
+    \node[align=center] at (2.5,-0.6) {\textbf{Batched}\\One crossing};
+  \end{scope}
+
+\end{tikzpicture}
+\caption{Unbatched vs Batched enclave-to-host calls}
+\end{figure}
+
+    }
+    \only<4>{\item \faCode\ \textbf{Offload heavy lifting:} Run non-sensitive, high-load tasks outside enclaves for efficiency. \\
+\begin{tikzpicture}[
+    font=\scriptsize,
+    >=Stealth,
+    thick,
+    task/.style={
+        fill=blue!10,
+        rounded corners=1pt,
+        minimum width=2.6cm,
+        minimum height=0.45cm,
+        draw
+    },
+    box/.style={
+        rounded corners=2pt,
+        minimum height=2.4cm,
+        draw,
+        thick
+    }
+]
+
+% --- Enclave ---
+\node[box,fill=green!20,minimum width=3.5cm,anchor=north west,
+      label={[font=\bfseries]above:Enclave}] (enclave) at (0,0) {};
+\node at ([yshift=-0.3cm]enclave.north) {Sensitive Tasks Only};
+
+% Sensitive tasks inside enclave
+\node[task] at ([yshift=-0.9cm]enclave.north) {Crypto Ops};
+\node[task] at ([yshift=-1.5cm]enclave.north) {ML Inference};
+\node[task] at ([yshift=-2.1cm]enclave.north) {Attestation};
+
+% --- Host area ---
+\node[box,fill=gray!15,minimum width=3.5cm,anchor=north west,
+      label={[font=\bfseries]above:Host}] (host) at (5,0) {};
+\node at ([yshift=-0.3cm]host.north) {Non‑Sensitive Tasks};
+
+% Non-sensitive tasks outside
+\node[task] at ([yshift=-0.9cm]host.north) {Bulk Encryption};
+\node[task] at ([yshift=-1.5cm]host.north) {Data Prep};
+
+% --- Arrow & label ---
+\draw[->,ultra thick]
+    ([yshift=-0.9cm]enclave.east) -- ([yshift=-0.9cm]host.west)
+    node[midway,above,font=\scriptsize] {Offload};
+
+% --- Legend ---
+\begin{scope}[shift={(0,-3)}]
+  \draw[fill=green!20,rounded corners=1pt] (0,0) rectangle +(0.35,0.2);
+  \node[right] at (0.45,0.1) {Enclave};
+  \draw[fill=gray!15,rounded corners=1pt] (2,0) rectangle +(0.35,0.2);
+  \node[right] at (2.45,0.1) {Host};
+  \draw[fill=blue!10,rounded corners=1pt] (4,0) rectangle +(0.35,0.2);
+  \node[right] at (4.45,0.1) {Task};
+\end{scope}
+
+\end{tikzpicture}
+    }
 \end{itemize}
 \end{block}
 
+\only<5>{
 \begin{alertblock}{Key Principle}
-    Balance performance, isolation, and PMP resource usage for optimal efficiency.
+    \textbf{Optimize the trade-off:} Balance performance, isolation, and PMP resource usage for maximum efficiency.
 \end{alertblock}
+}
 \end{frame}
 
 
@@ -840,7 +985,7 @@ PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misal
 }
 \end{frame}
 
-
+\section{Future Directions and Conclusion}
 % Future Work and Improvements
 \begin{frame}{Hardware Outlook \& Future Directions}
     \only<1>{

@@ -1,1 +1,5 @@
-\beamer@sectionintoc {1}{Key Performance Trends and Hardware Bottlenecks}{21}{0}{1}
+\beamer@sectionintoc {1}{Background and System Design}{7}{0}{1}
+\beamer@sectionintoc {2}{Experimental Setup}{13}{0}{2}
+\beamer@sectionintoc {3}{Results and Hardware Bottlenecks}{23}{0}{3}
+\beamer@sectionintoc {4}{Practical Deployment Strategies and Recommendations}{33}{0}{4}
+\beamer@sectionintoc {5}{Future Directions and Conclusion}{40}{0}{5}
