@@ -340,20 +340,8 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \end{itemize}
 \end{block}
 }
-% Second overlay: add figure
+
 \only<2>{
-\begin{block}{Overhead Breakdown}
-\begin{itemize}
-    \item Memory isolation via PMP adds fixed latency per memory access.
-    \item Context switches between host and enclave domains are costly.
-\end{itemize}
-\end{block}
-}
-% \centering
-% \textbf{Key Insight:} Overhead varies based on workload characteristics and memory behavior.
-% \end{frame}
-% Figure appears only on the second slide of this frame
-\only<3>{
 % \begin{frame}{Performance Trends and Hardware Bottlenecks}
 \centering
 \begin{figure}[htbp]
@@ -398,6 +386,20 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \end{figure}
 }
 \end{frame}
+
+% % Second overlay: add figure
+% \only<3>{
+% \begin{block}{Overhead Breakdown}
+% \begin{itemize}
+%     \item Memory isolation via PMP adds fixed latency per memory access.
+%     \item Context switches between host and enclave domains are costly.
+% \end{itemize}
+% \end{block}
+% }
+% \centering
+% \textbf{Key Insight:} Overhead varies based on workload characteristics and memory behavior.
+% \end{frame}
+% Figure appears only on the second slide of this frame
 
 \begin{frame}{Impact of Scalability Limitations}
 \small
