@@ -339,31 +339,28 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     %\item \textbf{Memory-bound workloads} experience significant penalties due to enclave-induced memory isolation and security checks.
 \end{itemize}
 \end{block}
-}
 
-\only<2>{
-% \begin{frame}{Performance Trends and Hardware Bottlenecks}
-\centering
-\begin{figure}[htbp]
+%\vspace{0.5cm} % Adjust space as needed
+
 \centering
 \begin{tikzpicture}
 \begin{axis}[
     ybar,
     bar width=14pt,
-    width=10cm,
-    height=6cm,
+    width=0.8\linewidth,
+    height=4cm,
     ymin=0, ymax=120,
-    ylabel={Relative performance (\%)},
+    ylabel={Rel. perf. (\%)},
     symbolic x coords={CoreMark,Dhrystone,Kyber},
     xtick=data,
     ymajorgrids,
     grid style=dashed,
     nodes near coords,
     every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
-    legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1}
+    legend style={at={(0.5,-0.35)}, anchor=north, legend columns=-1}
 ]
 
-% Native: orange, rounded top, tranRecommendationssparency
+% Native: orange
 \addplot[
     fill={rgb,255:red,230; green,159; blue,0},
     fill opacity=0.8,
@@ -371,7 +368,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     rounded corners=2pt
 ] coordinates {(CoreMark,100) (Dhrystone,100) (Kyber,100)};
 
-% Enclave: blue, rounded top, transparency
+% Enclave: blue
 \addplot[
     fill={rgb,255:red,0; green,114; blue,178},
     fill opacity=0.8,
@@ -379,12 +376,56 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     rounded corners=2pt
 ] coordinates {(CoreMark,95) (Dhrystone,62) (Kyber,37)};
 
-\legend{Native,Enclave}
+\legend{Native, Enclave}
 \end{axis}
 \end{tikzpicture}
-\caption{Relative performance of enclave vs native execution.}
-\end{figure}
+
 }
+
+% \only<2>{
+% % \begin{frame}{Performance Trends and Hardware Bottlenecks}
+% \centering
+% \begin{figure}[htbp]
+% \centering
+% \begin{tikzpicture}
+% \begin{axis}[
+%     ybar,
+%     bar width=14pt,
+%     width=10cm,
+%     height=6cm,
+%     ymin=0, ymax=120,
+%     ylabel={Relative performance (\%)},
+%     symbolic x coords={CoreMark,Dhrystone,Kyber},
+%     xtick=data,
+%     ymajorgrids,
+%     grid style=dashed,
+%     nodes near coords,
+%     every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
+%     legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1}
+% ]
+
+% % Native: orange, rounded top, tranRecommendationssparency
+% \addplot[
+%     fill={rgb,255:red,230; green,159; blue,0},
+%     fill opacity=0.8,
+%     draw=black!60,
+%     rounded corners=2pt
+% ] coordinates {(CoreMark,100) (Dhrystone,100) (Kyber,100)};
+
+% % Enclave: blue, rounded top, transparency
+% \addplot[
+%     fill={rgb,255:red,0; green,114; blue,178},
+%     fill opacity=0.8,
+%     draw=black!60,
+%     rounded corners=2pt
+% ] coordinates {(CoreMark,95) (Dhrystone,62) (Kyber,37)};
+
+% \legend{Native,Enclave}
+% \end{axis}
+% \end{tikzpicture}
+% \caption{Relative performance of enclave vs native execution.}
+% \end{figure}
+% }
 \end{frame}
 
 % % Second overlay: add figure
@@ -418,7 +459,7 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     width=0.75\linewidth,
     height=4.2cm,
     enlarge x limits=0.15,
-    ymin=95, ymax=125,
+    ymin=95, ymax=129,
     xlabel={CPU cores},
     ylabel={Rel.\ perf.\ (\%)},
     symbolic x coords={1,2,3,4,5,6,7,8},
@@ -554,6 +595,53 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
     \item This creates scalability issues, especially for high-concurrency workloads.
 \end{itemize}
 \end{block}
+
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10cm,
+    height=4.5cm,
+    xlabel={PMP Entries},
+    ylabel={Concurrent Enclaves},
+    xmin=0, xmax=16,
+    ymin=0, ymax=16,
+    xtick={0,4,8,12,16},
+    ymajorgrids,
+    grid style=dashed,
+    mark options={solid},
+    nodes near coords,
+    every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
+    clip=false,
+    cycle list={{teal,mark=*,thick}},
+    tick label style={font=\small},
+    label style={font=\small\bfseries},
+]
+
+% Data plot
+\addplot[
+    color=teal,
+    mark=*,
+    thick
+] coordinates {
+    (0,0) (2,2) (4,4) (6,6) (8,8) (10,8) (12,8) (14,8) (16,8)
+};
+
+% Highlight PMP exhaustion area
+\fill[red!30,opacity=0.4] (axis cs:8,0) rectangle (axis cs:16,16);
+
+% Add Yellow Sliding Zone (between 4 and 8 PMP entries)
+\fill[yellow!30, opacity=0.6] (axis cs:4,0) rectangle (axis cs:8,16);
+
+% Annotation inside shaded region
+\node[red, align=center, font=\footnotesize\bfseries] at (axis cs:12,12) {PMP Exhaustion \\ Caps at 8 Enclaves};
+\node[align=center, font=\footnotesize\bfseries, text=black] at (axis cs:6,12) {Sliding Zone};
+
+% Stability boundary line & label
+\draw[dashed, thick, color=blue] (axis cs:4,0) -- (axis cs:4,16);
+\node[anchor=south, font=\footnotesize\bfseries, color=blue] at (axis cs:4,16) {Stability Boundary};
+
+\end{axis}
+\end{tikzpicture}
 }
 
 % \centering
@@ -698,57 +786,57 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 
 % \begin{frame}{PMP Entries vs Max Concurrent Enclaves}
 % \centering
-\only<3>{
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=10cm,
-    height=6cm,
-    xlabel={PMP Entries},
-    ylabel={Concurrent Enclaves},
-    xmin=0, xmax=16,
-    ymin=0, ymax=16,
-    xtick={0,4,8,12,16},
-    ymajorgrids,
-    grid style=dashed,
-    mark options={solid},
-    nodes near coords,
-    every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
-    clip=false,
-    cycle list={{teal,mark=*,thick}},
-    tick label style={font=\small},
-    label style={font=\small\bfseries},
-]
+% \only<3>{
+% \begin{figure}[htbp]
+% \centering
+% \begin{tikzpicture}
+% \begin{axis}[
+%     width=10cm,
+%     height=6cm,
+%     xlabel={PMP Entries},
+%     ylabel={Concurrent Enclaves},
+%     xmin=0, xmax=16,
+%     ymin=0, ymax=16,
+%     xtick={0,4,8,12,16},
+%     ymajorgrids,
+%     grid style=dashed,
+%     mark options={solid},
+%     nodes near coords,
+%     every node near coord/.append style={font=\footnotesize, /pgf/number format/fixed},
+%     clip=false,
+%     cycle list={{teal,mark=*,thick}},
+%     tick label style={font=\small},
+%     label style={font=\small\bfseries},
+% ]
 
-% Data plot
-\addplot[
-    color=teal,
-    mark=*,
-    thick
-] coordinates {
-    (0,0) (2,2) (4,4) (6,6) (8,8) (10,8) (12,8) (14,8) (16,8)
-};
+% % Data plot
+% \addplot[
+%     color=teal,
+%     mark=*,
+%     thick
+% ] coordinates {
+%     (0,0) (2,2) (4,4) (6,6) (8,8) (10,8) (12,8) (14,8) (16,8)
+% };
 
-% Highlight PMP exhaustion area
-\fill[red!30,opacity=0.4] (axis cs:8,0) rectangle (axis cs:16,16);
+% % Highlight PMP exhaustion area
+% \fill[red!30,opacity=0.4] (axis cs:8,0) rectangle (axis cs:16,16);
 
-% Add Yellow Sliding Zone (between 4 and 8 PMP entries)
-\fill[yellow!30, opacity=0.6] (axis cs:4,0) rectangle (axis cs:8,16);
+% % Add Yellow Sliding Zone (between 4 and 8 PMP entries)
+% \fill[yellow!30, opacity=0.6] (axis cs:4,0) rectangle (axis cs:8,16);
 
-% Annotation inside shaded region
-\node[red, align=center, font=\footnotesize\bfseries] at (axis cs:12,12) {PMP Exhaustion \\ Caps at 8 Enclaves};
-\node[align=center, font=\footnotesize\bfseries, text=black] at (axis cs:6,12) {Sliding Zone};
+% % Annotation inside shaded region
+% \node[red, align=center, font=\footnotesize\bfseries] at (axis cs:12,12) {PMP Exhaustion \\ Caps at 8 Enclaves};
+% \node[align=center, font=\footnotesize\bfseries, text=black] at (axis cs:6,12) {Sliding Zone};
 
-% Stability boundary line & label
-\draw[dashed, thick, color=blue] (axis cs:4,0) -- (axis cs:4,16);
-\node[anchor=south, font=\footnotesize\bfseries, color=blue] at (axis cs:4,16) {Stability Boundary};
+% % Stability boundary line & label
+% \draw[dashed, thick, color=blue] (axis cs:4,0) -- (axis cs:4,16);
+% \node[anchor=south, font=\footnotesize\bfseries, color=blue] at (axis cs:4,16) {Stability Boundary};
 
-\end{axis}
-\end{tikzpicture}
-\caption{Max enclaves increase with PMP entries until exhaustion caps growth.}
-\end{figure}
-}
+% \end{axis}
+% \end{tikzpicture}
+% \caption{Max enclaves increase with PMP entries until exhaustion caps growth.}
+% \end{figure}
+% }
 \end{frame}
 
 \begin{frame}{PMP Misalignment: Why It Matters}
@@ -756,6 +844,48 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 \begin{block}{The Problem}
 PMP entries must describe power-of-two, naturally aligned regions (NAPOT). Misaligned memory allocations cause unnecessary padding.
 \end{block}
+
+\begin{tikzpicture}[scale=1, transform shape, font=\small]
+
+% Memory bar
+\draw[thick] (0,0) rectangle (12,1);
+\node[anchor=south] at (0,1.1) {\textbf{Base}};
+\node[anchor=south] at (12,1.1) {\textbf{Top}};
+
+% Needed regions (non-contiguous)
+\draw[fill=gray!30] (0.5,0.1) rectangle (2.2,0.9);
+\node[font=\footnotesize] at (1.35,0.5) {\textbf{R1}};
+
+\draw[fill=gray!30] (3.8,0.1) rectangle (4.6,0.9);
+\node[font=\footnotesize] at (4.2,0.5) {\textbf{R2}};
+
+\draw[fill=gray!30] (7.0,0.1) rectangle (9.1,0.9);
+\node[font=\footnotesize] at (8.05,0.5) {\textbf{R3}};
+
+% NAPOT allocations (outer boxes) and padding (hatched)
+\draw[thick, fill=blue!20, draw=blue!80!black] (0.25,-0.3) rectangle (2.5,-1.1);
+\node[font=\footnotesize, align=center] at (1.375,-0.7) {\textbf{NAPOT} \\ \footnotesize fit R1};
+
+\draw[pattern=north east lines, pattern color=black] (0.25,-0.3) rectangle (0.5,-1.1);
+\draw[pattern=north east lines, pattern color=black] (2.2,-0.3) rectangle (2.5,-1.1);
+
+\draw[thick, fill=green!20, draw=green!60!black] (3.5,-0.3) rectangle (5.1,-1.1);
+\node[font=\footnotesize, align=center] at (4.3,-0.7) {\textbf{NAPOT} \\ \footnotesize fit R2};
+
+\draw[pattern=north east lines, pattern color=black] (3.5,-0.3) rectangle (3.8,-1.1);
+\draw[pattern=north east lines, pattern color=black] (4.6,-0.3) rectangle (5.1,-1.1);
+
+\draw[thick, fill=orange!20, draw=orange!70!black] (6.7,-0.3) rectangle (9.3,-1.1);
+\node[font=\footnotesize, align=center] at (8.0,-0.7) {\textbf{NAPOT} \\ \footnotesize fit R3};
+
+\draw[pattern=north east lines, pattern color=black] (6.7,-0.3) rectangle (7.0,-1.1);
+\draw[pattern=north east lines, pattern color=black] (9.1,-0.3) rectangle (9.3,-1.1);
+
+% Legend / note
+\node[anchor=west] at (0,-1.6) {\footnotesize \textbf{Note:} Hatched = padding/waste due to power-of-two alignment};
+
+\end{tikzpicture}
+
     }
 %     \only<2>{
 % \begin{block}{The Effect}
