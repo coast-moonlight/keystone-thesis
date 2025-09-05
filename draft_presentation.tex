@@ -401,22 +401,137 @@ Flexible Configurations& \cellcolor{green!15}High & \cellcolor{red!15}Low & \cel
 
 \begin{frame}{Impact of Scalability Limitations}
 \small
+\only<1>{
 \begin{block}{CPU Scaling Limits}
 \begin{itemize}
-    \item Increasing CPU cores \textbf{benefits multi-threaded tasks}, but gains plateau due to context-switch overhead and enclave thread management.
+    \item Increasing CPU cores \textbf{benefits multi-threaded tasks}, but gains plateau due to context-switch overhead.
     \item For example, \texttt{CoreMark} shows marginal improvements beyond 4 cores.
 \end{itemize}
 \end{block}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=0.75\linewidth,
+    height=4.2cm,
+    enlarge x limits=0.15,
+    ymin=95, ymax=125,
+    xlabel={CPU cores},
+    ylabel={Rel.\ perf.\ (\%)},
+    symbolic x coords={1,2,3,4,5,6,7,8},
+    xtick=data,
+    ymajorgrids,
+    grid style={dotted, gray!50},
+    font=\scriptsize,
+    tick label style={font=\scriptsize},
+    legend style={
+        font=\scriptsize,
+        at={(0.5,-0.50)},
+        anchor=north,
+        legend columns=2
+    },
+    nodes near coords,
+    every node near coord/.append style={font=\tiny},
+    point meta=explicit symbolic
+]
 
+% Native
+\addplot[fill=blue!40] coordinates {
+    (1,100) [100]
+    (2,108) [108]
+    (3,115) [115]
+    (4,120) [120]
+    (5,122) [122]
+    (6,123) [123]
+    (7,123) [123]
+    (8,123) [123]
+};
+
+% Enclave
+\addplot[fill=green!50!black!40] coordinates {
+    (1,100) [100]
+    (2,102) [102]
+    (3,103) [103]
+    (4,104) [104]
+    (5,106) [106]
+    (6,108) [108]
+    (7,110) [110]
+    (8,110) [110]
+};
+
+\legend{Native, Enclave}
+\end{axis}
+\end{tikzpicture}
+
+
+}
+\only<2>{
 \begin{block}{Memory Scaling Constraints}
 \begin{itemize}
     \item Increased memory capacity \textbf{improves performance} by reducing page faults.
     \item \textbf{Fragmentation} and \textbf{PMP entry limits} cap the performance improvement.
 \end{itemize}
 \end{block}
-
 \centering
-\textbf{Key Insight:} Hardware resources alone cannot fully predict enclave performance due to system resource allocation limits.
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=8pt,
+    width=0.75\linewidth,
+    height=4.2cm,
+    enlarge x limits=0.2,
+    ymin=90, ymax=118,
+    xlabel={Memory (MB)},
+    ylabel={Rel.\ perf.\ (\%)},
+    symbolic x coords={64,128,256,512},
+    xtick=data,
+    ymajorgrids,
+    grid style={dotted, gray!50},
+    font=\scriptsize,
+    tick label style={font=\scriptsize},
+    legend style={
+        font=\scriptsize,
+        at={(0.5,-0.5)},
+        anchor=north,
+        legend columns=1
+    },
+    nodes near coords,
+    every node near coord/.append style={font=\tiny},
+    point meta=explicit symbolic
+]
+
+% Native contiguous
+\addplot[fill=blue!40] coordinates {
+    (64,100) [100]
+    (128,106) [106]
+    (256,112) [112]
+    (512,115) [115]
+};
+
+% Enclave contiguous
+\addplot[fill=green!50!black!40] coordinates {
+    (64,95) [95]
+    (128,98) [98]
+    (256,100) [100]
+    (512,102) [102]
+};
+
+% Enclave fragmented
+\addplot[fill=orange!70!black!40] coordinates {
+    (64,92) [92]
+    (128,94) [94]
+    (256,95) [95]
+    (512,96) [96]
+};
+
+\legend{Native contig., Enclave contig., Enclave frag.}
+\end{axis}
+\end{tikzpicture}
+
+}
+% \centering
+% \textbf{Key Insight:} Hardware resources alone cannot fully predict enclave performance due to system resource allocation limits.
 \end{frame}
 
 \begin{frame}{PMP Entry Exhaustion and Multi-Enclave Scalability}
