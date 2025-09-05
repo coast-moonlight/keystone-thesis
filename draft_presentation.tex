@@ -132,9 +132,34 @@ Examples include:
     \item Scalable from embedded systems to high-performance computing.
     \item Growing adoption in academia and industry (e.g., SiFive, Western Digital).
 \end{itemize}
-\begin{block}{Key Concept}
-\textit{RISC-V’s open-source nature enables flexible, secure processor designs for enclave-based systems.}
-\end{block}
+% \begin{block}{Key Concept}
+% \textit{RISC-V’s open-source nature enables flexible, secure processor designs for enclave-based systems.}
+% \end{block}
+
+\begin{center}
+\scalebox{1}{ % adjust this factor to shrink or enlarge
+\begin{tikzpicture}[font=\scriptsize, >=latex, node distance=0.5cm]
+
+% Base ISA
+\node[draw, fill=blue!20, thick, minimum width=5cm, minimum height=0.8cm, align=center] (isa) {\textbf{RISC-V ISA} \\ Open, stable foundation};
+
+% Optional Extensions layer
+\node[draw, fill=yellow!30, thick, minimum width=4.5cm, minimum height=0.8cm, align=center, above=of isa] (ext) {Optional Extensions \\ (Vector, Crypto, Custom...)};
+
+% Application domains
+\node[draw, fill=orange!30, thick, rounded corners, minimum width=2.8cm, minimum height=0.8cm, align=center, above left=0.9cm and 0.4cm of ext] (embedded) {Embedded};
+\node[draw, fill=green!30, thick, rounded corners, minimum width=2.8cm, minimum height=0.8cm, align=center, above=0.9cm of ext] (hpc) {HPC};
+\node[draw, fill=purple!30, thick, rounded corners, minimum width=2.8cm, minimum height=0.8cm, align=center, above right=0.9cm and 0.4cm of ext] (enclave) {Enclaves};
+
+% Arrows
+\draw[->, thick] (isa) -- (ext);
+\draw[->, thick] (ext.north west) .. controls +(0,0.4) and +(0,-0.4) .. (embedded.south);
+\draw[->, thick] (ext.north) -- (hpc.south);
+\draw[->, thick] (ext.north east) .. controls +(0,0.4) and +(0,-0.4) .. (enclave.south);
+
+\end{tikzpicture}
+} % end scalebox
+\end{center}
 \end{frame}
 
 % Keystone 
